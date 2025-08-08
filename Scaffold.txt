@@ -1,1 +1,5 @@
-﻿dotnet ef dbcontext scaffold "Server=185.203.18.50;Database=KarlixID;User Id=sa;Password=PikVrbovec123!;TrustServerCertificate=True;" Microsoft.EntityFrameworkCore.SqlServer --context-dir Data --output-dir Models --context ApplicationDbContext --force
+﻿SA VANJSKE MREŽE
+dotnet ef dbcontext scaffold "Server=185.203.18.50;Database=KarlixID;User Id=sa;Password=PikVrbovec123!;TrustServerCertificate=True;" Microsoft.EntityFrameworkCore.SqlServer --context-dir Data --output-dir Models --context ApplicationDbContext --force
+
+SA VPS-A
+dotnet ef dbcontext scaffold "Server=localhost;Database=KarlixID;User Id=sa;Password=PikVrbovec123!;TrustServerCertificate=True;" Microsoft.EntityFrameworkCore.SqlServer --context-dir Data --output-dir Models --context ApplicationDbContext --force
