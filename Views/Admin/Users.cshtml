@@ -1,0 +1,31 @@
+﻿@model List<KarlixID.Web.Models.ApplicationUser>
+@{
+    ViewData["Title"] = "Korisnici";
+    var tenantId = ViewBag.TenantId;
+}
+
+<h1>Korisnici</h1>
+
+<form asp-action="ExportUsers" asp-route-tenantId="@tenantId" method="post" class="mb-3">
+    <button type="submit" class="btn btn-outline-success">Export u Excel</button>
+</form>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Korisničko ime</th>
+            <th>Email</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.UserName</td>
+                <td>@user.Email</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="Index" class="btn btn-secondary">Natrag</a>

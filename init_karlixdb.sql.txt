@@ -1,0 +1,109 @@
+﻿-- 1. Kreiranje baze
+CREATE DATABASE KarlixID;
+GO
+
+USE KarlixID;
+GO
+
+-- 2. Tablica: AspNetRoles
+CREATE TABLE AspNetRoles (
+    Id NVARCHAR(450) NOT NULL PRIMARY KEY,
+    Name NVARCHAR(256),
+    NormalizedName NVARCHAR(256),
+    ConcurrencyStamp NVARCHAR(MAX)
+);
+GO
+
+-- 3. Tablica: AspNetUsers
+CREATE TABLE AspNetUsers (
+    Id NVARCHAR(450) NOT NULL PRIMARY KEY,
+    UserName NVARCHAR(256),
+    NormalizedUserName NVARCHAR(256),
+    Email NVARCHAR(256),
+    NormalizedEmail NVARCHAR(256),
+    EmailConfirmed BIT NOT NULL,
+    PasswordHash NVARCHAR(MAX),
+    SecurityStamp NVARCHAR(MAX),
+    ConcurrencyStamp NVARCHAR(MAX),
+    PhoneNumber NVARCHAR(MAX),
+    PhoneNumberConfirmed BIT NOT NULL,
+    TwoFactorEnabled BIT NOT NULL,
+    LockoutEnd DATETIMEOFFSET,
+    LockoutEnabled BIT NOT NULL,
+    AccessFailedCount INT NOT NULL,
+    TenantId UNIQUEIDENTIFIER NOT NULL
+);
+GO
+
+-- 4. Tablica: Tenants
+CREATE TABLE Tenants (
+    Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+    Name NVARCHAR(200) NOT NULL,
+    Hostname NVARCHAR(200) NOT NULL UNIQUE,
+    IsActive BIT NOT NULL DEFAULT 1
+);
+GO
+
+-- 5. AspNetClaims i log tablice
+CREATE TABLE AspNetUserClaims (
+    Id INT NOT NULL IDENTITY PRIMARY KEY,
+    UserId NVARCHAR(450) NOT NULL,
+    ClaimType NVARCHAR(MAX),
+    ClaimValue NVARCHAR(MAX)
+);
+GO
+
+CREATE TABLE AspNetUserLogins (
+    LoginProvider NVARCHAR(128) NOT NULL,
+    ProviderKey NVARCHAR(128) NOT NULL,
+    ProviderDisplayName NVARCHAR(MAX),
+    UserId NVARCHAR(450) NOT NULL,
+    PRIMARY KEY (LoginProvider, ProviderKey)
+);
+GO
+
+CREATE TABLE AspNetUserRoles (
+    UserId NVARCHAR(450) NOT NULL,
+    RoleId NVARCHAR(450) NOT NULL,
+    PRIMARY KEY (UserId, RoleId)
+);
+GO
+
+CREATE TABLE AspNetUserTokens (
+    UserId NVARCHAR(450) NOT NULL,
+    LoginProvider NVARCHAR(128) NOT NULL,
+    Name NVARCHAR(128) NOT NULL,
+    Value NVARCHAR(MAX),
+    PRIMARY KEY (UserId, LoginProvider, Name)
+);
+GO
+
+CREATE TABLE AspNetRoleClaims (
+    Id INT NOT NULL IDENTITY PRIMARY KEY,
+    RoleId NVARCHAR(450) NOT NULL,
+    ClaimType NVARCHAR(MAX),
+    ClaimValue NVARCHAR(MAX)
+);
+GO
+
+-- 6. Indeksi (neki su bitni za login performanse)
+CREATE UNIQUE INDEX IX_AspNetRoles_NormalizedName ON AspNetRoles (NormalizedName) WHERE NormalizedName IS NOT NULL;
+CREATE UNIQUE INDEX IX_AspNetUsers_NormalizedUserName ON AspNetUsers (NormalizedUserName) WHERE NormalizedUserName IS NOT NULL;
+CREATE UNIQUE INDEX IX_AspNetUsers_NormalizedEmail ON AspNetUsers (NormalizedEmail) WHERE NormalizedEmail IS NOT NULL;
+CREATE INDEX IX_AspNetUserClaims_UserId ON AspNetUserClaims (UserId);
+CREATE INDEX IX_AspNetUserLogins_UserId ON AspNetUserLogins (UserId);
+CREATE INDEX IX_AspNetUserRoles_RoleId ON AspNetUserRoles (RoleId);
+CREATE INDEX IX_AspNetRoleClaims_RoleId ON AspNetRoleClaims (RoleId);
+GO
+
+-- 7. Foreign Keys
+ALTER TABLE AspNetUserClaims ADD CONSTRAINT FK_UserClaims_User FOREIGN KEY (UserId) REFERENCES AspNetUsers(Id) ON DELETE CASCADE;
+ALTER TABLE AspNetUserLogins ADD CONSTRAINT FK_UserLogins_User FOREIGN KEY (UserId) REFERENCES AspNetUsers(Id) ON DELETE CASCADE;
+ALTER TABLE AspNetUserRoles ADD CONSTRAINT FK_UserRoles_User FOREIGN KEY (UserId) REFERENCES AspNetUsers(Id) ON DELETE CASCADE;
+ALTER TABLE AspNetUserRoles ADD CONSTRAINT FK_UserRoles_Role FOREIGN KEY (RoleId) REFERENCES AspNetRoles(Id) ON DELETE CASCADE;
+ALTER TABLE AspNetUserTokens ADD CONSTRAINT FK_UserTokens_User FOREIGN KEY (UserId) REFERENCES AspNetUsers(Id) ON DELETE CASCADE;
+ALTER TABLE AspNetRoleClaims ADD CONSTRAINT FK_RoleClaims_Role FOREIGN KEY (RoleId) REFERENCES AspNetRoles(Id) ON DELETE CASCADE;
+GO
+
+-- 8. Indeks na TenantId
+CREATE INDEX IX_AspNetUsers_TenantId ON AspNetUsers (TenantId);

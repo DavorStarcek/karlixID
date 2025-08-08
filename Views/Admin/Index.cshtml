@@ -1,0 +1,34 @@
+﻿@model List<KarlixID.Web.Models.Tenant>
+@{
+    ViewData["Title"] = "Tenanti";
+}
+
+<h1>Popis tenanata</h1>
+
+<a asp-action="CreateTenant" class="btn btn-primary mb-3">Dodaj novi tenant</a>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Naziv</th>
+            <th>Hostname</th>
+            <th>Aktivan</th>
+            <th>Korisnici</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var tenant in Model)
+        {
+            <tr>
+                <td>@tenant.Name</td>
+                <td>@tenant.Hostname</td>
+                <td>@(tenant.IsActive ? "Da" : "Ne")</td>
+                <td>
+                    <a asp-action="Users" asp-route-tenantId="@tenant.Id" class="btn btn-sm btn-outline-primary">
+                        Prikaži korisnike
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

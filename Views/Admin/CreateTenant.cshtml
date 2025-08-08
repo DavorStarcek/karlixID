@@ -1,0 +1,31 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+
+
+@model KarlixID.Web.Models.Tenant
+@{
+    ViewData["Title"] = "Novi tenant";
+}
+
+<h1>Dodaj novi tenant</h1>
+
+<form asp-action="CreateTenant" method="post">
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Hostname" class="form-label"></label>
+        <input asp-for="Hostname" class="form-control" />
+        <span asp-validation-for="Hostname" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-success">Spremi</button>
+    <a asp-action="Index" class="btn btn-secondary">Natrag</a>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
