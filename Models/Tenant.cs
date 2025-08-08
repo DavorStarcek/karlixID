@@ -1,10 +1,15 @@
-﻿namespace KarlixID.Web.Models
+﻿using System;
+using System.Collections.Generic;
+
+namespace KarlixID.Web.Models;
+
+public partial class Tenant
 {
-    public class Tenant
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public string Name { get; set; } // Naziv firme
-        public string Hostname { get; set; } // firma1.karlix.eu
-        public bool IsActive { get; set; } = true;
-    }
+    public Guid Id { get; set; }
+
+    public string Name { get; set; } = null!;
+
+    public string Hostname { get; set; } = null!;
+
+    public bool IsActive { get; set; }
 }

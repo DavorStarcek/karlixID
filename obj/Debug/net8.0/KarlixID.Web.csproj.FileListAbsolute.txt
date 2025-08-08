@@ -167,5 +167,5 @@ C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID.Web\bin\Debug\net8.0\en\Kar
 C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID.Web\bin\Debug\net8.0\hr\KarlixID.Web.resources.dll
 C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID.Web\obj\Debug\net8.0\en\KarlixID.Web.resources.dll
 C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID.Web\obj\Debug\net8.0\hr\KarlixID.Web.resources.dll
-C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID.Web\obj\Debug\net8.0\en\KarlixID.Web.resources.cs
-C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID.Web\obj\Debug\net8.0\hr\KarlixID.Web.resources.cs
+C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID.Web\obj\Debug\net8.0\KarlixID.Web.sourcelink.json
+C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID.Web\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
