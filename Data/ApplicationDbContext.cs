@@ -28,11 +28,13 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<AspNetUserToken> AspNetUserTokens { get; set; }
 
+    public virtual DbSet<TblTest> TblTests { get; set; }
+
     public virtual DbSet<Tenant> Tenants { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=185.203.18.50;Database=KarlixID;User Id=sa;Password=PikVrbovec123!;TrustServerCertificate=True;");
+        => optionsBuilder.UseSqlServer("Server=localhost;Database=KarlixID;User Id=sa;Password=PikVrbovec123!;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -130,6 +132,18 @@ public partial class ApplicationDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.AspNetUserTokens)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("FK_UserTokens_User");
+        });
+
+        modelBuilder.Entity<TblTest>(entity =>
+        {
+            entity.ToTable("tbl_Test");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("ID");
+            entity.Property(e => e.Name)
+                .HasMaxLength(10)
+                .IsFixedLength();
         });
 
         modelBuilder.Entity<Tenant>(entity =>
