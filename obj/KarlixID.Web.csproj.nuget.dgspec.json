@@ -1,25 +1,27 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Administrator\\Desktop\\VS Projekti\\KarlixID.Web.csproj": {}
+    "C:\\Users\\dstarcek\\Desktop\\KarlixEU projekti\\KarlixID.Web.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Administrator\\Desktop\\VS Projekti\\KarlixID.Web.csproj": {
+    "C:\\Users\\dstarcek\\Desktop\\KarlixEU projekti\\KarlixID.Web.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Administrator\\Desktop\\VS Projekti\\KarlixID.Web.csproj",
+        "projectUniqueName": "C:\\Users\\dstarcek\\Desktop\\KarlixEU projekti\\KarlixID.Web.csproj",
         "projectName": "KarlixID.Web",
-        "projectPath": "C:\\Users\\Administrator\\Desktop\\VS Projekti\\KarlixID.Web.csproj",
-        "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Administrator\\Desktop\\VS Projekti\\obj\\",
+        "projectPath": "C:\\Users\\dstarcek\\Desktop\\KarlixEU projekti\\KarlixID.Web.csproj",
+        "packagesPath": "C:\\Users\\dstarcek\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\dstarcek\\Desktop\\KarlixEU projekti\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet\\"
         ],
         "configFilePaths": [
-          "C:\\Users\\Administrator\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\dstarcek\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -95,7 +97,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
