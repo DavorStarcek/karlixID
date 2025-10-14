@@ -1,14 +1,21 @@
 using Microsoft.AspNetCore.Mvc;
 using KarlixID.Web.Models;
+using KarlixID.Web.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace KarlixID.Web.Controllers
 {
     public class HomeController : Controller
     {
-        public IActionResult Index()
+        public async Task<IActionResult> Index([FromServices] ApplicationDbContext db)
         {
-            return View();
+            var tenants = await db.Tenants
+                                  .OrderBy(t => t.Name)
+                                  .Take(50)
+                                  .ToListAsync();
+            return View(tenants);
         }
+
 
         public IActionResult Privacy()
         {

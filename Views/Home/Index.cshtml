@@ -1,13 +1,32 @@
-﻿@using Microsoft.AspNetCore.Mvc.Localization
+﻿@model List<KarlixID.Web.Models.Tenant>
 
-@inject IViewLocalizer Localizer
+<h2>Tenanti (test)</h2>
 
-
-@{
-    ViewData["Title"] = Localizer["Title_Home"];
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-warning">Nema zapisa u tablici Tenants.</div>
 }
-
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Naziv</th>
+                <th>Hostname</th>
+                <th>Aktivan</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var t in Model)
+            {
+                <tr>
+                    <td>@t.Id</td>
+                    <td>@t.Name</td>
+                    <td>@t.Hostname</td>
+                    <td>@t.IsActive</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

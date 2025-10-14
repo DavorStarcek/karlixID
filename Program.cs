@@ -69,8 +69,7 @@ using (var scope = app.Services.CreateScope())
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-    context.Database.Migrate();
-
+    
     if (!await roleManager.RoleExistsAsync("GlobalAdmin"))
         await roleManager.CreateAsync(new IdentityRole("GlobalAdmin"));
 
@@ -98,35 +97,3 @@ app.Run();
 
 
 
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<ApplicationDbContext>();
-    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-
-    context.Database.Migrate();
-
-    // Role
-    if (!await roleManager.RoleExistsAsync("GlobalAdmin"))
-        await roleManager.CreateAsync(new IdentityRole("GlobalAdmin"));
-
-    // Seed global admin
-    var globalAdmin = await userManager.FindByEmailAsync("admin@karlix.eu");
-    if (globalAdmin == null)
-    {
-        var user = new ApplicationUser
-        {
-            UserName = "admin@karlix.eu",
-            Email = "admin@karlix.eu",
-            EmailConfirmed = true,
-            TenantId = Guid.Empty
-        };
-
-        var result = await userManager.CreateAsync(user, "Admin123!");
-        if (result.Succeeded)
-        {
-            await userManager.AddToRoleAsync(user, "GlobalAdmin");
-        }
-    }
-}
