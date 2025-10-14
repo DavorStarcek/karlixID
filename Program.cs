@@ -5,6 +5,10 @@ using KarlixID.Web.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using System.Security.Claims;
+using Microsoft.AspNetCore.DataProtection;
+// OPTIONAL za reverse proxy (Cloudflare/Nginx/HAProxy):
+// using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,9 +28,28 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
+// 📌 Cookie settings
+builder.Services.ConfigureApplicationCookie(opts =>
+{
+    opts.LoginPath = "/Identity/Account/Login";
+    opts.LogoutPath = "/Identity/Account/Logout";
+    opts.AccessDeniedPath = "/Identity/Account/AccessDenied";
+    opts.SlidingExpiration = true;
+    opts.ExpireTimeSpan = TimeSpan.FromHours(8);
+});
+
+// 📌 Claims factory (tenant_id / tenant_name, itd.)
+builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, AppUserClaimsPrincipalFactory>();
+
+// 📌 Authorization politike
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("GlobalAdminOnly", p => p.RequireRole(Roles.GlobalAdmin));
+    options.AddPolicy("TenantAdminOrGlobal", p => p.RequireRole(Roles.GlobalAdmin, Roles.TenantAdmin));
+});
+
 // 📌 Middleware & Services
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<TenantResolverMiddleware>();
 builder.Services.AddTransient<EmailService>();
 builder.Services.AddTransient<ExcelExportService>();
 
@@ -36,6 +59,27 @@ builder.Services.AddLocalization(opts => { opts.ResourcesPath = "Resources"; });
 builder.Services.AddControllersWithViews()
     .AddViewLocalization()
     .AddDataAnnotationsLocalization();
+
+
+// ✅✅ DATA PROTECTION — spremanje ključeva na disk (stabilni auth cookies kroz restarte/IIS recycle)
+var keysPath = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+    "KarlixID", "keys"
+);
+Directory.CreateDirectory(keysPath);
+
+builder.Services
+    .AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(keysPath))
+    .SetApplicationName("KarlixID");
+
+
+// // OPTIONAL ako si iza reverse proxy-a (Cloudflare/Nginx/HAProxy), uključi ForwardedHeaders:
+// builder.Services.Configure<ForwardedHeadersOptions>(opts =>
+// {
+//     opts.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+// });
+
 
 var app = builder.Build();
 
@@ -51,6 +95,10 @@ app.UseRequestLocalization(new RequestLocalizationOptions
 app.UseStaticFiles();
 app.UseRouting();
 
+// // OPTIONAL: ako si iza reverse proxy-a, ovo ide prije auth (skini komentar ako treba)
+// app.UseForwardedHeaders();
+
+
 // 📌 Multitenant Middleware
 app.UseTenantResolver();
 
@@ -61,7 +109,7 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// 📌 Migracije + GlobalAdmin seed
+// 📌 Seed uloga i admin korisnika
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -69,12 +117,19 @@ using (var scope = app.Services.CreateScope())
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-    
-    if (!await roleManager.RoleExistsAsync("GlobalAdmin"))
-        await roleManager.CreateAsync(new IdentityRole("GlobalAdmin"));
+    // Ako si strogo DB-first i ne koristiš EF migracije, ostavi zakomentirano:
+    // context.Database.Migrate();
 
-    var admin = await userManager.FindByEmailAsync("admin@karlix.eu");
-    if (admin == null)
+    // Role
+    if (!await roleManager.RoleExistsAsync(Roles.GlobalAdmin))
+        await roleManager.CreateAsync(new IdentityRole(Roles.GlobalAdmin));
+
+    if (!await roleManager.RoleExistsAsync(Roles.TenantAdmin))
+        await roleManager.CreateAsync(new IdentityRole(Roles.TenantAdmin));
+
+    // GlobalAdmin
+    var globalAdmin = await userManager.FindByEmailAsync("admin@karlix.eu");
+    if (globalAdmin == null)
     {
         var user = new ApplicationUser
         {
@@ -86,14 +141,29 @@ using (var scope = app.Services.CreateScope())
 
         var result = await userManager.CreateAsync(user, "Admin123!");
         if (result.Succeeded)
+            await userManager.AddToRoleAsync(user, Roles.GlobalAdmin);
+    }
+
+    // (Opcionalno) TenantAdmin za 'localhost'
+    var localhostTenant = context.Tenants.FirstOrDefault(t => t.Hostname == "localhost");
+    if (localhostTenant != null)
+    {
+        var taEmail = "tenant.admin@localhost";
+        var ta = await userManager.FindByEmailAsync(taEmail);
+        if (ta == null)
         {
-            await userManager.AddToRoleAsync(user, "GlobalAdmin");
+            var u = new ApplicationUser
+            {
+                UserName = taEmail,
+                Email = taEmail,
+                EmailConfirmed = true,
+                TenantId = localhostTenant.Id
+            };
+            var res = await userManager.CreateAsync(u, "TempPass123!");
+            if (res.Succeeded)
+                await userManager.AddToRoleAsync(u, Roles.TenantAdmin);
         }
     }
 }
 
 app.Run();
-
-
-
-

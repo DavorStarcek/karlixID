@@ -1,0 +1,43 @@
+﻿@model List<KarlixID.Web.Controllers.TenantUserRow>
+
+<h2>Korisnici</h2>
+
+@if (TempData["msg"] != null)
+{
+    <div class="alert alert-success">@TempData["msg"]</div>
+}
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">+ Dodaj korisnika</a>
+</p>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Nema korisnika.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>TenantId</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in Model)
+            {
+                <tr>
+                    <td>@u.Email</td>
+                    <td>@u.TenantId</td>
+                    <td>
+                        <a asp-action="ResetPassword" asp-route-id="@u.Id" class="btn btn-sm btn-outline-secondary">
+                            Reset lozinke
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
