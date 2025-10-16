@@ -1,12 +1,11 @@
 ﻿@model KarlixID.Web.Models.Tenant
 @{
-    ViewData["Title"] = "Uredi tenant";
+    ViewData["Title"] = "Novi tenant";
 }
 
 <h2>@ViewData["Title"]</h2>
 
-<form asp-action="Edit" method="post" class="mt-3">
-    <input type="hidden" asp-for="Id" />
+<form asp-action="Create" method="post" class="mt-3">
     <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
 
     <div class="mb-3">
@@ -19,6 +18,7 @@
         <label asp-for="Hostname" class="form-label"></label>
         <input asp-for="Hostname" class="form-control" />
         <span class="text-danger" asp-validation-for="Hostname"></span>
+        <div class="form-text">npr. <code>tenant1.karlix.eu</code> ili <code>localhost</code></div>
     </div>
 
     <div class="form-check mb-3">

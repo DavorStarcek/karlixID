@@ -1,44 +1,70 @@
 ﻿@model IEnumerable<KarlixID.Web.Models.Tenant>
 @{
     ViewData["Title"] = "Tenanti";
+    var q = ViewBag.FilterQ as string;
+    var onlyActive = (bool)(ViewBag.FilterOnlyActive ?? false);
 }
 
-<h2>@ViewData["Title"]</h2>
+<h2 class="mb-3">@ViewData["Title"]</h2>
 
-@if (TempData["Ok"] is string ok && !string.IsNullOrWhiteSpace(ok))
-{
-    <div class="alert alert-success">@ok</div>
-}
+<div class="row g-3 align-items-end mb-3">
+    <div class="col-md-4">
+        <label class="form-label">Traži po nazivu / hostu</label>
+        <input type="text" name="q" value="@q" class="form-control" form="fFilters" placeholder="npr. tenant, karlix.eu" />
+    </div>
+    <div class="col-md-3">
+        <div class="form-check mt-4">
+            <input class="form-check-input" type="checkbox" name="onlyActive" value="true" form="fFilters" @(onlyActive ? "checked" : "") />
+            <label class="form-check-label">Samo aktivni</label>
+        </div>
+    </div>
+    <div class="col-md-5 text-md-end">
+        <form id="fFilters" method="get" class="d-inline">
+            <button type="submit" class="btn btn-outline-primary me-2">Filtriraj</button>
+            <a class="btn btn-outline-secondary" asp-action="Index">Poništi</a>
+        </form>
+        <a class="btn btn-primary ms-2" asp-action="Create">+ Novi tenant</a>
+    </div>
+</div>
+
+
 
 @if (!Model.Any())
 {
-    <div class="alert alert-info">Nema zapisa u tablici Tenants.</div>
+    <div class="alert alert-info">Nema zapisa.</div>
 }
 else
 {
-    <table class="table table-striped">
+    <table class="table table-striped align-middle">
         <thead>
             <tr>
-                <th>Id</th>
-                <th>Naziv</th>
-                <th>Hostname</th>
-                <th>Aktivan</th>
-                <th></th>
+                <th style="width: 36%">Naziv</th>
+                <th style="width: 34%">Hostname</th>
+                <th style="width: 10%">Aktivan</th>
+                <th style="width: 20%"></th>
             </tr>
         </thead>
         <tbody>
             @foreach (var t in Model)
             {
                 <tr>
-                    <td class="text-muted">@t.Id</td>
                     <td>@t.Name</td>
-                    <td>@t.Hostname</td>
+                    <td><code>@t.Hostname</code></td>
                     <td>@(t.IsActive ? "Da" : "Ne")</td>
                     <td class="text-nowrap">
                         <a class="btn btn-sm btn-outline-primary"
-                           asp-controller="Tenants"
-                           asp-action="Edit"
-                           asp-route-id="@t.Id">Uredi</a>
+                           asp-action="Edit" asp-route-id="@t.Id">Uredi</a>
+
+                        <form asp-action="ToggleActive" asp-route-id="@t.Id" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm @(t.IsActive ? "btn-outline-warning" : "btn-outline-success")">
+                                @(t.IsActive ? "Deaktiviraj" : "Aktiviraj")
+                            </button>
+                        </form>
+
+                        <form asp-action="Delete" asp-route-id="@t.Id" method="post" class="d-inline"
+                              onsubmit="return confirm('Sigurno obrisati tenant: @t.Name ?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Obriši</button>
+                        </form>
                     </td>
                 </tr>
             }

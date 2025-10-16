@@ -16,14 +16,75 @@ namespace KarlixID.Web.Controllers
             _db = db;
         }
 
-        // GET: /Tenants
-        public async Task<IActionResult> Index()
+        // GET: /Tenants?q=&onlyActive=true
+        public async Task<IActionResult> Index(string? q, bool? onlyActive)
         {
-            var data = await _db.Tenants
+            ViewBag.FilterQ = q;
+            ViewBag.FilterOnlyActive = onlyActive ?? false;
+
+            var query = _db.Tenants.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var needle = q.Trim();
+                query = query.Where(t =>
+                    t.Name.Contains(needle) ||
+                    t.Hostname.Contains(needle));
+            }
+
+            if (onlyActive == true)
+            {
+                query = query.Where(t => t.IsActive);
+            }
+
+            var list = await query
                 .OrderBy(t => t.Name)
                 .ToListAsync();
 
-            return View(data);
+            return View(list);
+        }
+
+        // GET: /Tenants/Create
+        public IActionResult Create()
+        {
+            return View(new Tenant { IsActive = true });
+        }
+
+        // POST: /Tenants/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create([Bind("Name,Hostname,IsActive")] Tenant model)
+        {
+            // osnovne validacije
+            if (string.IsNullOrWhiteSpace(model.Name))
+                ModelState.AddModelError(nameof(Tenant.Name), "Naziv je obavezan.");
+
+            if (string.IsNullOrWhiteSpace(model.Hostname))
+                ModelState.AddModelError(nameof(Tenant.Hostname), "Hostname je obavezan.");
+
+            if (!string.IsNullOrWhiteSpace(model.Hostname))
+            {
+                var exists = await _db.Tenants
+                    .AnyAsync(t => t.Hostname.ToLower() == model.Hostname.Trim().ToLower());
+                if (exists)
+                    ModelState.AddModelError(nameof(Tenant.Hostname), "Hostname već postoji.");
+            }
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var entity = new Tenant
+            {
+                Id = Guid.NewGuid(),
+                Name = model.Name.Trim(),
+                Hostname = model.Hostname.Trim(),
+                IsActive = model.IsActive
+            };
+
+            _db.Tenants.Add(entity);
+            await _db.SaveChangesAsync();
+
+                        return RedirectToAction(nameof(Index));
         }
 
         // GET: /Tenants/Edit/{id}
@@ -37,36 +98,68 @@ namespace KarlixID.Web.Controllers
             return View(tenant);
         }
 
-        // POST: /Tenants/Edit
+        // POST: /Tenants/Edit/{id}
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Guid id, [Bind("Id,Name,Hostname,IsActive")] Tenant model)
         {
             if (id != model.Id) return NotFound();
 
-            // jedinstveni Hostname (case-insensitive)
+            if (string.IsNullOrWhiteSpace(model.Name))
+                ModelState.AddModelError(nameof(Tenant.Name), "Naziv je obavezan.");
+
+            if (string.IsNullOrWhiteSpace(model.Hostname))
+                ModelState.AddModelError(nameof(Tenant.Hostname), "Hostname je obavezan.");
+
             var exists = await _db.Tenants
-                .AnyAsync(t => t.Id != model.Id && t.Hostname.ToLower() == model.Hostname.ToLower());
+                .AnyAsync(t => t.Id != model.Id && t.Hostname.ToLower() == model.Hostname.Trim().ToLower());
             if (exists)
-            {
                 ModelState.AddModelError(nameof(Tenant.Hostname), "Hostname već postoji.");
-            }
 
             if (!ModelState.IsValid)
-            {
                 return View(model);
-            }
 
             var dbTenant = await _db.Tenants.FirstOrDefaultAsync(t => t.Id == model.Id);
             if (dbTenant == null) return NotFound();
 
-            dbTenant.Name = model.Name;
-            dbTenant.Hostname = model.Hostname;
+            dbTenant.Name = model.Name.Trim();
+            dbTenant.Hostname = model.Hostname.Trim();
             dbTenant.IsActive = model.IsActive;
 
             await _db.SaveChangesAsync();
+            
+            return RedirectToAction(nameof(Index));
+        }
 
-            TempData["Ok"] = "Tenant je ažuriran.";
+        // POST: /Tenants/Delete/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            var tenant = await _db.Tenants.FirstOrDefaultAsync(t => t.Id == id);
+            if (tenant == null) return NotFound();
+
+            // (opcionalno) provjeri ima li korisnika vezanih na ovaj tenant i spriječi brisanje
+            // var hasUsers = await _db.AspNetUsers.AnyAsync(u => u.TenantId == id);
+            // if (hasUsers) { TempData["Err"] = "Tenant ima korisnike. Najprije ih prebacite/obrišite."; return RedirectToAction(nameof(Index)); }
+
+            _db.Tenants.Remove(tenant);
+            await _db.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST: /Tenants/ToggleActive/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleActive(Guid id)
+        {
+            var tenant = await _db.Tenants.FirstOrDefaultAsync(t => t.Id == id);
+            if (tenant == null) return NotFound();
+
+            tenant.IsActive = !tenant.IsActive;
+            await _db.SaveChangesAsync();
+
             return RedirectToAction(nameof(Index));
         }
     }
