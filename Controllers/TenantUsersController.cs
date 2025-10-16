@@ -329,5 +329,72 @@ namespace KarlixID.Web.Controllers
             TempData["Ok"] = locked ? "Korisnik je otključan." : "Korisnik je zaključan.";
             return RedirectToAction(nameof(Index));
         }
+
+        // GET: /TenantUsers/EditRoles/{id}
+        [Authorize(Policy = "TenantAdminOrGlobal")]
+        public async Task<IActionResult> EditRoles(string id)
+        {
+            var me = await _um.GetUserAsync(User);
+            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+
+            var user = await _um.FindByIdAsync(id);
+            if (user == null) return NotFound();
+
+            if (!isGlobal && me!.TenantId != user.TenantId)
+                return Forbid();
+
+            var allRoles = await _rm.Roles.OrderBy(r => r.Name).ToListAsync();
+            var userRoles = await _um.GetRolesAsync(user);
+
+            var vm = new EditRolesVM
+            {
+                UserId = user.Id,
+                Email = user.Email ?? user.UserName ?? "",
+                Roles = allRoles.Select(r => new EditRolesVM.RoleItem
+                {
+                    Name = r.Name!,
+                    Selected = userRoles.Contains(r.Name!)
+                }).ToList()
+            };
+            return View(vm);
+        }
+
+        // POST: /TenantUsers/EditRoles
+        [HttpPost, ValidateAntiForgeryToken]
+        [Authorize(Policy = "TenantAdminOrGlobal")]
+        public async Task<IActionResult> EditRoles(EditRolesVM model)
+        {
+            var me = await _um.GetUserAsync(User);
+            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+
+            var user = await _um.FindByIdAsync(model.UserId);
+            if (user == null) return NotFound();
+
+            if (!isGlobal && me!.TenantId != user.TenantId)
+                return Forbid();
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var current = await _um.GetRolesAsync(user);
+            var wanted = model.Roles.Where(x => x.Selected).Select(x => x.Name).ToList();
+
+            var toAdd = wanted.Except(current);
+            var toRemove = current.Except(wanted);
+
+            var addRes = await _um.AddToRolesAsync(user, toAdd);
+            var remRes = await _um.RemoveFromRolesAsync(user, toRemove);
+
+            if (!addRes.Succeeded || !remRes.Succeeded)
+            {
+                foreach (var e in addRes.Errors.Concat(remRes.Errors))
+                    ModelState.AddModelError("", e.Description);
+                return View(model);
+            }
+
+            TempData["Ok"] = "Uloge su ažurirane.";
+            return RedirectToAction(nameof(Index));
+        }
+
     }
 }

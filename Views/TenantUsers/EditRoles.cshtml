@@ -3,49 +3,41 @@
     ViewData["Title"] = "Uredi uloge";
 }
 
-<h2 class="mb-3">@ViewData["Title"]</h2>
+<h2>@ViewData["Title"]</h2>
+<p class="text-muted">Korisnik: <strong>@Model.Email</strong></p>
 
-<div class="card">
-    <div class="card-body">
-        <div class="mb-3">
-            <label class="form-label">Korisnik</label>
-            <input class="form-control" value="@Model.Email" disabled />
-        </div>
+<form asp-action="EditRoles" method="post">
+    <input type="hidden" asp-for="UserId" />
 
-        <form asp-action="EditRoles" method="post">
-            <input type="hidden" asp-for="UserId" />
-
-            <div class="mb-3">
-                <label class="form-label">Uloge</label>
-
-                @if (Model.AvailableRoles == null || !Model.AvailableRoles.Any())
-                {
-                    <div class="alert alert-warning">Nema dostupnih uloga.</div>
-                }
-                else
-                {
-                    foreach (var role in Model.AvailableRoles)
+    <div class="card mb-3">
+        <div class="card-header">Uloge</div>
+        <div class="card-body">
+            @if (Model.Roles == null || !Model.Roles.Any())
+            {
+                <div class="alert alert-info mb-0">Nema definiranih uloga.</div>
+            }
+            else
+            {
+                <div class="row">
+                    @for (int i = 0; i < Model.Roles.Count; i++)
                     {
-                        var isChecked = Model.SelectedRoles?.Contains(role, StringComparer.OrdinalIgnoreCase) ?? false;
-                        <div class="form-check">
-                            <input class="form-check-input"
-                                   type="checkbox"
-                                   name="SelectedRoles"
-                                   value="@role"
-                                   @(isChecked ? "checked" : "") />
-                            <label class="form-check-label">@role</label>
+                        var id = $"Roles_{i}__Selected";
+                        <div class="col-md-4 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" id="@id" asp-for="Roles[i].Selected" />
+                                <label class="form-check-label" for="@id">@Model.Roles[i].Name</label>
+                                <input type="hidden" asp-for="Roles[i].Name" />
+                            </div>
                         </div>
                     }
-                }
-            </div>
-
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">Spremi</button>
-                <a class="btn btn-secondary" asp-action="Index">Natrag</a>
-            </div>
-        </form>
+                </div>
+            }
+        </div>
     </div>
-</div>
+
+    <button type="submit" class="btn btn-primary">Spremi</button>
+    <a asp-action="Index" class="btn btn-secondary">Natrag</a>
+</form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

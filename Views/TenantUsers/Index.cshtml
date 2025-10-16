@@ -64,6 +64,7 @@ else
                     <td>@(u.LockedOut ? "Da" : "Ne")</td>
                     <td class="text-nowrap">
                         <a class="btn btn-sm btn-outline-secondary" asp-action="Edit" asp-route-id="@u.Id">Uredi</a>
+                        <a class="btn btn-sm btn-outline-primary" asp-action="EditRoles" asp-route-id="@u.Id">Uloge</a>
                         <a class="btn btn-sm btn-outline-secondary" asp-action="ResetPassword" asp-route-id="@u.Id">Lozinka</a>
                         <a class="btn btn-sm btn-outline-warning" asp-action="ToggleLock" asp-route-id="@u.Id">@((u.LockedOut) ? "Otključaj" : "Zaključaj")</a>
                     </td>

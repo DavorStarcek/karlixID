@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace KarlixID.Web.Models.ViewModels
 {
@@ -7,13 +8,16 @@ namespace KarlixID.Web.Models.ViewModels
         [Required]
         public string UserId { get; set; } = string.Empty;
 
-        [Display(Name = "Email")]
         public string Email { get; set; } = string.Empty;
 
-        // Sve dostupne role u sustavu (po imenu)
-        public List<string> AvailableRoles { get; set; } = new();
+        // ✔ Lista svih uloga s checkboxom Selected
+        public List<RoleItem> Roles { get; set; } = new();
 
-        // Trenutno odabrane role (checkbox binding)
-        public List<string> SelectedRoles { get; set; } = new();
+        // ✔ Jedna uloga
+        public class RoleItem
+        {
+            public string Name { get; set; } = string.Empty;
+            public bool Selected { get; set; }
+        }
     }
 }
