@@ -1,0 +1,35 @@
+﻿@model IEnumerable<KarlixID.Web.Models.Tenant>
+@{
+    ViewData["Title"] = "Tenanti (test)";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Nema zapisa u tablici Tenants.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Naziv</th>
+                <th>Hostname</th>
+                <th>Aktivan</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var t in Model)
+            {
+                <tr>
+                    <td class="text-muted">@t.Id</td>
+                    <td>@t.Name</td>
+                    <td>@t.Hostname</td>
+                    <td>@(t.IsActive ? "True" : "False")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
