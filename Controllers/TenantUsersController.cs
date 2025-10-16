@@ -15,7 +15,8 @@ namespace KarlixID.Web.Controllers
         private readonly UserManager<ApplicationUser> _um;
         private readonly RoleManager<IdentityRole> _rm;
 
-        public TenantUsersController(ApplicationDbContext db,
+        public TenantUsersController(
+            ApplicationDbContext db,
             UserManager<ApplicationUser> um,
             RoleManager<IdentityRole> rm)
         {
@@ -29,21 +30,21 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> Index()
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
 
-            // baza: Users + Tenants + Roles
-            var q = from u in _db.Users.AsNoTracking()
+            // 💡 Korištenje _um.Users (IQueryable<ApplicationUser>) umjesto _db.Users
+            var q = from u in _um.Users.AsNoTracking()
                     join t in _db.Tenants.AsNoTracking() on u.TenantId equals t.Id into gj
                     from tt in gj.DefaultIfEmpty()
                     select new { u, tt };
 
             if (!isGlobal && me?.TenantId != null)
             {
-                q = q.Where(x => x.u.TenantId == me!.TenantId);
+                q = q.Where(x => x.u.TenantId == me.TenantId);
             }
 
             var data = await q
-                .OrderBy(x => x.tt!.Name)
+                .OrderBy(x => x.tt != null ? x.tt.Name : "(no tenant)")
                 .ThenBy(x => x.u.Email)
                 .Select(x => new TenantUserRow
                 {
@@ -57,11 +58,11 @@ namespace KarlixID.Web.Controllers
                 })
                 .ToListAsync();
 
-            // roles za svakog (odvojeno, da je store-agnostic)
+            // roles za svakog (odvojeno, store-agnostic)
             foreach (var row in data)
             {
                 var usr = await _um.FindByIdAsync(row.Id);
-                var roles = await _um.GetRolesAsync(usr!);
+                var roles = usr != null ? await _um.GetRolesAsync(usr) : Array.Empty<string>();
                 row.RolesCsv = string.Join(", ", roles);
             }
 
@@ -73,7 +74,7 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> Create()
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
 
             ViewBag.CanPickTenant = isGlobal;
             ViewBag.Tenants = await _db.Tenants
@@ -83,6 +84,7 @@ namespace KarlixID.Web.Controllers
 
             return View(new CreateTenantUserVM
             {
+                // Ako nije global, TenantId se ne bira — zaključan je na adminov tenant
                 TenantId = isGlobal ? null : me!.TenantId
             });
         }
@@ -93,28 +95,49 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> Create(CreateTenantUserVM model)
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
 
             if (!ModelState.IsValid)
-                return await Create();
+            {
+                // ponovno napuni drop-down-e
+                ViewBag.CanPickTenant = isGlobal;
+                ViewBag.Tenants = await _db.Tenants
+                    .OrderBy(t => t.Name)
+                    .Select(t => new { t.Id, t.Name })
+                    .ToListAsync();
+                return View(model);
+            }
 
-            // Ako nije GlobalAdmin, forsiramo njegov tenant
-            var tenantId = isGlobal ? model.TenantId : me!.TenantId;
+            // 🎯 Tenant asignacija:
+            // - GlobalAdmin može ručno birati tenant (ili ostaviti null → global user)
+            // - TenantAdmin uvijek kreira unutar svog tenanta
+            Guid? targetTenantId = isGlobal ? model.TenantId : me!.TenantId;
+
+            // lozinka: koristi zadanu ili generiraj privremenu
+            var password = !string.IsNullOrWhiteSpace(model.TempPassword)
+                ? model.TempPassword!
+                : GenerateTempPassword();
 
             var user = new ApplicationUser
             {
                 Email = model.Email,
                 UserName = model.Email,
                 EmailConfirmed = true,
-                TenantId = tenantId ?? Guid.Empty // ako je null, stavi Guid.Empty
+                TenantId = targetTenantId // null za global usera
             };
 
-            var result = await _um.CreateAsync(user, model.Password);
+            var result = await _um.CreateAsync(user, password);
             if (!result.Succeeded)
             {
                 foreach (var e in result.Errors)
                     ModelState.AddModelError("", e.Description);
-                return await Create();
+
+                ViewBag.CanPickTenant = isGlobal;
+                ViewBag.Tenants = await _db.Tenants
+                    .OrderBy(t => t.Name)
+                    .Select(t => new { t.Id, t.Name })
+                    .ToListAsync();
+                return View(model);
             }
 
             // Role
@@ -126,6 +149,7 @@ namespace KarlixID.Web.Controllers
                 await _um.AddToRoleAsync(user, AppRoleInfo.TenantAdmin);
             }
 
+            TempData["Info"] = $"Korisnik {model.Email} je kreiran. Privremena lozinka: {password}";
             return RedirectToAction(nameof(Index));
         }
 
@@ -134,7 +158,7 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> ResetPassword(string id)
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
 
             var user = await _um.FindByIdAsync(id);
             if (user == null) return NotFound();
@@ -152,7 +176,7 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> ResetPassword(ResetPasswordVM model)
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
 
             var user = await _um.FindByIdAsync(model.UserId);
             if (user == null) return NotFound();
@@ -173,6 +197,7 @@ namespace KarlixID.Web.Controllers
                 return View(model);
             }
 
+            TempData["Info"] = "Lozinka je resetirana.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -181,7 +206,7 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> ToggleLock(string id)
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
 
             var user = await _um.FindByIdAsync(id);
             if (user == null) return NotFound();
@@ -190,17 +215,22 @@ namespace KarlixID.Web.Controllers
                 return Forbid();
 
             var locked = user.LockoutEnd != null && user.LockoutEnd > DateTimeOffset.UtcNow;
-            if (locked)
-            {
-                user.LockoutEnd = null;
-            }
-            else
-            {
-                user.LockoutEnd = DateTimeOffset.UtcNow.AddYears(100);
-            }
+            user.LockoutEnd = locked ? null : DateTimeOffset.UtcNow.AddYears(100);
+
             await _um.UpdateAsync(user);
 
             return RedirectToAction(nameof(Index));
+        }
+
+        // -------------------------
+        // Helpers
+        // -------------------------
+        private static string GenerateTempPassword()
+        {
+            // Identity opcije su kod tebe popuštene (nema obaveznih brojeva/velikih slova),
+            // no neka lozinka bude barem 10 znakova da prođe zadane/minimale politike.
+            // Ako želiš stroža pravila, dodaćemo.
+            return $"Tmp{Guid.NewGuid():N}".Substring(0, 10) + "!";
         }
     }
 }

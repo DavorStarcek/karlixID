@@ -64,6 +64,7 @@ builder.Services.AddControllersWithViews()
 // ✅ Razor Pages (za Identity UI)
 builder.Services.AddRazorPages();
 
+
 // ✅✅ DATA PROTECTION — spremanje ključeva na disk (stabilni auth cookies kroz restarte/IIS recycle)
 var keysPath = Path.Combine(
     Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
@@ -92,6 +93,10 @@ app.UseRequestLocalization(new RequestLocalizationOptions
     SupportedCultures = supportedCultures,
     SupportedUICultures = supportedCultures
 });
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.UseStaticFiles();
 app.UseRouting();

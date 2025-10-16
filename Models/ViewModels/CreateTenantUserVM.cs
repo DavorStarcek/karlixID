@@ -5,16 +5,18 @@ namespace KarlixID.Web.Models.ViewModels
 {
     public class CreateTenantUserVM
     {
-        [Required, EmailAddress]
-        public string Email { get; set; } = default!;
+        [Required, EmailAddress, Display(Name = "Email")]
+        public string Email { get; set; } = string.Empty;
 
-        [Required, MinLength(6)]
-        public string Password { get; set; } = default!;
+        [Display(Name = "Dodijeli ulogu TenantAdmin")]
+        public bool MakeTenantAdmin { get; set; } = false;
 
-        // Ako ne proslijediš, u kontroleru ćemo staviti current tenant.
+        // Privremena lozinka (ako je prazno, generirat ćemo u kontroleru)
+        [Display(Name = "Privremena lozinka (opcionalno)")]
+        public string? TempPassword { get; set; }
+
+        // ✅ Dodano: TenantId (nullable) — null = global user
+        [Display(Name = "Tenant")]
         public Guid? TenantId { get; set; }
-
-        // Samo GlobalAdmin smije postaviti TenantAdmin ulogu.
-        public bool MakeTenantAdmin { get; set; }
     }
 }

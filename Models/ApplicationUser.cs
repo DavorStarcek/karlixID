@@ -5,6 +5,6 @@ namespace KarlixID.Web.Models
 {
     public class ApplicationUser : IdentityUser
     {
-        public Guid TenantId { get; set; }
+        public Guid? TenantId { get; set; }
     }
 }

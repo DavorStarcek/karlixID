@@ -1,50 +1,62 @@
 ﻿@model KarlixID.Web.Models.ViewModels.CreateTenantUserVM
 @{
-    ViewData["Title"] = "Novi korisnik";
+    ViewData["Title"] = "Dodaj korisnika";
     var canPickTenant = (bool)(ViewBag.CanPickTenant ?? false);
-    var tenants = ViewBag.Tenants as IEnumerable<object>;
+    var tenants = ViewBag.Tenants as IEnumerable<dynamic>; // očekuje { Id, Name }
 }
 
 <h2>@ViewData["Title"]</h2>
+<hr />
 
-<form asp-action="Create" method="post" class="mt-3">
+<form asp-action="Create" method="post">
     <div class="mb-3">
         <label asp-for="Email" class="form-label"></label>
         <input asp-for="Email" class="form-control" />
         <span asp-validation-for="Email" class="text-danger"></span>
     </div>
 
-    <div class="mb-3">
-        <label asp-for="Password" class="form-label"></label>
-        <input asp-for="Password" type="password" class="form-control" />
-        <span asp-validation-for="Password" class="text-danger"></span>
-    </div>
-
+    @* Tenant biramo samo ako je GlobalAdmin *@
     @if (canPickTenant)
     {
         <div class="mb-3">
-            <label class="form-label">Tenant</label>
-            <select class="form-select" asp-for="TenantId">
-                <option value="">— odaberi —</option>
-                @foreach (dynamic t in tenants!)
+            <label asp-for="TenantId" class="form-label"></label>
+            <select asp-for="TenantId" class="form-select">
+                <option value="">(global user)</option>
+                @if (tenants != null)
                 {
-                    <option value="@t.Id">@t.Name</option>
+                    foreach (var t in tenants)
+                    {
+                        <option value="@t.Id">@t.Name</option>
+                    }
                 }
             </select>
-        </div>
-
-        <div class="form-check mb-3">
-            <input class="form-check-input" asp-for="MakeTenantAdmin" />
-            <label class="form-check-label" asp-for="MakeTenantAdmin">Dodijeli ulogu TenantAdmin</label>
+            <span class="form-text">Ostavite prazno za global korisnika.</span>
+            <span asp-validation-for="TenantId" class="text-danger"></span>
         </div>
     }
     else
     {
-        <input type="hidden" asp-for="TenantId" />
+        @* TenantAdmin ne bira tenant — prikaz samo info badge *@
+        <div class="mb-3">
+            <label class="form-label">Tenant</label><br />
+            <span class="badge bg-secondary">Dodavanje unutar vlastitog tenanta</span>
+        </div>
     }
 
+    <div class="mb-3 form-check">
+        <input asp-for="MakeTenantAdmin" class="form-check-input" />
+        <label asp-for="MakeTenantAdmin" class="form-check-label"></label>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="TempPassword" class="form-label"></label>
+        <input asp-for="TempPassword" class="form-control" autocomplete="new-password" />
+        <span class="form-text">Ako ostavite prazno, generirat će se privremena lozinka.</span>
+        <span asp-validation-for="TempPassword" class="text-danger"></span>
+    </div>
+
     <button type="submit" class="btn btn-primary">Spremi</button>
-    <a asp-action="Index" class="btn btn-secondary">Natrag</a>
+    <a asp-action="Index" class="btn btn-outline-secondary">Odustani</a>
 </form>
 
 @section Scripts {
