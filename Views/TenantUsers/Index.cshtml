@@ -3,44 +3,90 @@
     ViewData["Title"] = "Tenant korisnici";
 }
 
-<h2>@ViewData["Title"]</h2>
-
-<p>
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="m-0">@ViewData["Title"]</h2>
     <a class="btn btn-primary" asp-action="Create">+ Novi korisnik</a>
-</p>
+</div>
 
-@if (!Model.Any())
+@if (!Model?.Any() ?? true)
 {
-    <div class="alert alert-info">Nema korisnika.</div>
+    <div class="alert alert-info mb-0">Nema korisnika.</div>
 }
 else
 {
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Tenant</th>
-                <th>Email</th>
-                <th>Uloge</th>
-                <th>Potvrđen</th>
-                <th>Zaključan</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var u in Model)
-            {
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead class="table-light">
                 <tr>
-                    <td>@u.TenantName</td>
-                    <td>@u.Email</td>
-                    <td>@u.RolesCsv</td>
-                    <td>@(u.EmailConfirmed ? "Da" : "Ne")</td>
-                    <td>@(u.LockedOut ? "Da" : "Ne")</td>
-                    <td class="text-nowrap">
-                        <a class="btn btn-sm btn-outline-secondary" asp-action="ResetPassword" asp-route-id="@u.Id">Lozinka</a>
-                        <a class="btn btn-sm btn-outline-warning" asp-action="ToggleLock" asp-route-id="@u.Id">@((u.LockedOut) ? "Otključaj" : "Zaključaj")</a>
-                    </td>
+                    <th style="width: 22%">Tenant</th>
+                    <th style="width: 28%">Email</th>
+                    <th style="width: 25%">Uloge</th>
+                    <th style="width: 10%">Potvrđen</th>
+                    <th style="width: 10%">Zaključan</th>
+                    <th style="width: 15%" class="text-end">Akcije</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var u in Model)
+                {
+                    <tr>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(u.TenantName))
+                            {
+                                <span class="badge bg-secondary">@u.TenantName</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-dark">(no tenant)</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="fw-semibold">@u.Email</div>
+                            @if (!string.IsNullOrWhiteSpace(u.UserName) && u.UserName != u.Email)
+                            {
+                                <div class="text-muted small">@u.UserName</div>
+                            }
+                        </td>
+                        <td>
+                            @if (string.IsNullOrWhiteSpace(u.RolesCsv))
+                            {
+                                <span class="badge bg-light text-muted">—</span>
+                            }
+                            else
+                            {
+                                var roles = u.RolesCsv.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+                                foreach (var r in roles)
+                                {
+                                    var roleTrim = r.Trim();
+                                    var cls = roleTrim.Equals(AppRoleInfo.GlobalAdmin, StringComparison.OrdinalIgnoreCase)
+                                    ? "bg-danger"
+                                    : roleTrim.Equals(AppRoleInfo.TenantAdmin, StringComparison.OrdinalIgnoreCase)
+                                    ? "bg-info"
+                                    : "bg-dark";
+
+                                    <span class="badge @cls me-1">@roleTrim</span>
+                                }
+                            }
+                        </td>
+                        <td>@(u.EmailConfirmed ? "Da" : "Ne")</td>
+                        <td>@(u.LockedOut ? "Da" : "Ne")</td>
+                        <td class="text-end text-nowrap">
+                            <a class="btn btn-sm btn-outline-secondary"
+                               asp-action="ResetPassword"
+                               asp-route-id="@u.Id"
+                               title="Reset lozinke">
+                                Lozinka
+                            </a>
+                            <a class="btn btn-sm btn-outline-warning ms-1"
+                               asp-action="ToggleLock"
+                               asp-route-id="@u.Id"
+                               title="@(u.LockedOut ? "Otključaj korisnika" : "Zaključaj korisnika")">
+                                @(u.LockedOut ? "Otključaj" : "Zaključaj")
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }

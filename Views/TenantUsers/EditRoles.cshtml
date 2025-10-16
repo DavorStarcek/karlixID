@@ -1,0 +1,23 @@
+﻿@{
+    ViewData["Title"] = "Uredi uloge";
+    var userEmail = ViewBag.UserEmail as string ?? "";
+    var userId = ViewBag.UserId as string ?? "";
+    var isTenantAdmin = (bool)(ViewBag.IsTenantAdmin ?? false);
+}
+
+<h2>@ViewData["Title"]</h2>
+<p class="text-muted">Korisnik: <strong>@userEmail</strong></p>
+<hr />
+
+<form asp-action="EditRoles" method="post">
+    <input type="hidden" name="id" value="@userId" />
+    <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="makeTenantAdmin" name="makeTenantAdmin" @(isTenantAdmin ? "checked" : "") />
+        <label class="form-check-label" for="makeTenantAdmin">
+            Dodijeli ulogu <code>TenantAdmin</code>
+        </label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Spremi</button>
+    <a asp-action="Index" class="btn btn-outline-secondary">Natrag</a>
+</form>

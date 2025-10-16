@@ -60,6 +60,14 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVGVuYW50VXNlcnNcQ3JlYXRlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/dstarcek/Desktop/KarlixEU projekti/KarlixID/Views/TenantUsers/Delete.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVGVuYW50VXNlcnNcRGVsZXRlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/dstarcek/Desktop/KarlixEU projekti/KarlixID/Views/TenantUsers/EditRoles.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVGVuYW50VXNlcnNcRWRpdFJvbGVzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/dstarcek/Desktop/KarlixEU projekti/KarlixID/Views/TenantUsers/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVGVuYW50VXNlcnNcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
