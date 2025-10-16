@@ -3,31 +3,39 @@
     ViewData["Title"] = "Tenanti";
     var q = ViewBag.FilterQ as string;
     var onlyActive = (bool)(ViewBag.FilterOnlyActive ?? false);
+    var isGlobal = User.IsInRole(KarlixID.Web.Models.AppRoleInfo.GlobalAdmin);
 }
 
-<h2 class="mb-3">@ViewData["Title"]</h2>
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="mb-0">@ViewData["Title"]</h2>
 
-<div class="row g-3 align-items-end mb-3">
-    <div class="col-md-4">
-        <label class="form-label">Traži po nazivu / hostu</label>
-        <input type="text" name="q" value="@q" class="form-control" form="fFilters" placeholder="npr. tenant, karlix.eu" />
-    </div>
-    <div class="col-md-3">
-        <div class="form-check mt-4">
-            <input class="form-check-input" type="checkbox" name="onlyActive" value="true" form="fFilters" @(onlyActive ? "checked" : "") />
-            <label class="form-check-label">Samo aktivni</label>
-        </div>
-    </div>
-    <div class="col-md-5 text-md-end">
-        <form id="fFilters" method="get" class="d-inline">
-            <button type="submit" class="btn btn-outline-primary me-2">Filtriraj</button>
-            <a class="btn btn-outline-secondary" asp-action="Index">Poništi</a>
-        </form>
-        <a class="btn btn-primary ms-2" asp-action="Create">+ Novi tenant</a>
-    </div>
+    @* desno gumb kao na korisnicima *@
+    @if (isGlobal)
+    {
+        <a class="btn btn-primary" asp-action="Create">+ Novi tenant</a>
+    }
 </div>
 
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-6 col-lg-5">
+        <input name="q"
+               value="@(q ?? "")"
+               class="form-control"
+               placeholder="Traži po nazivu / hostu..." />
+    </div>
 
+    <div class="col-md-3 col-lg-3 d-flex align-items-center">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="onlyActive" value="true" id="onlyActive" @(onlyActive ? "checked" : "") />
+            <label class="form-check-label" for="onlyActive">Samo aktivni</label>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-lg-4">
+        <button type="submit" class="btn btn-outline-secondary">Primijeni</button>
+        <a class="btn btn-link" asp-action="Index">Reset</a>
+    </div>
+</form>
 
 @if (!Model.Any())
 {
@@ -35,13 +43,16 @@
 }
 else
 {
-    <table class="table table-striped align-middle">
+    <table class="table table-striped">
         <thead>
             <tr>
-                <th style="width: 36%">Naziv</th>
-                <th style="width: 34%">Hostname</th>
-                <th style="width: 10%">Aktivan</th>
-                <th style="width: 20%"></th>
+                <th>Naziv</th>
+                <th>Hostname</th>
+                <th>Aktivan</th>
+                @if (isGlobal)
+                {
+                    <th class="text-end">Akcije</th>
+                }
             </tr>
         </thead>
         <tbody>
@@ -49,23 +60,30 @@ else
             {
                 <tr>
                     <td>@t.Name</td>
-                    <td><code>@t.Hostname</code></td>
+                    <td>@t.Hostname</td>
                     <td>@(t.IsActive ? "Da" : "Ne")</td>
-                    <td class="text-nowrap">
-                        <a class="btn btn-sm btn-outline-primary"
-                           asp-action="Edit" asp-route-id="@t.Id">Uredi</a>
 
-                        <form asp-action="ToggleActive" asp-route-id="@t.Id" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm @(t.IsActive ? "btn-outline-warning" : "btn-outline-success")">
-                                @(t.IsActive ? "Deaktiviraj" : "Aktiviraj")
-                            </button>
-                        </form>
+                    @if (isGlobal)
+                    {
+                        <td class="text-end text-nowrap">
+                            <a class="btn btn-sm btn-outline-secondary"
+                               asp-action="Edit" asp-route-id="@t.Id">Uredi</a>
 
-                        <form asp-action="Delete" asp-route-id="@t.Id" method="post" class="d-inline"
-                              onsubmit="return confirm('Sigurno obrisati tenant: @t.Name ?');">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Obriši</button>
-                        </form>
-                    </td>
+                            <form asp-action="ToggleActive" asp-route-id="@t.Id"
+                                  method="post" class="d-inline">
+                                <button type="submit"
+                                        class="btn btn-sm @(t.IsActive ? "btn-outline-warning" : "btn-outline-success")">
+                                    @(t.IsActive ? "Deaktiviraj" : "Aktiviraj")
+                                </button>
+                            </form>
+
+                            <form asp-action="Delete" asp-route-id="@t.Id"
+                                  method="post" class="d-inline"
+                                  onsubmit=@($"return confirm('Obrisati tenant {t.Name}?');")>
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Obriši</button>
+                            </form>
+                        </td>
+                    }
                 </tr>
             }
         </tbody>

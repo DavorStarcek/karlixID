@@ -17,6 +17,7 @@ namespace KarlixID.Web.Controllers
         }
 
         // GET: /Tenants?q=&onlyActive=true
+        [Authorize(Policy = "GlobalAdminOnly")]
         public async Task<IActionResult> Index(string? q, bool? onlyActive)
         {
             ViewBag.FilterQ = q;
@@ -26,10 +27,9 @@ namespace KarlixID.Web.Controllers
 
             if (!string.IsNullOrWhiteSpace(q))
             {
-                var needle = q.Trim();
                 query = query.Where(t =>
-                    t.Name.Contains(needle) ||
-                    t.Hostname.Contains(needle));
+                    (t.Name != null && t.Name.Contains(q)) ||
+                    (t.Hostname != null && t.Hostname.Contains(q)));
             }
 
             if (onlyActive == true)
@@ -37,12 +37,13 @@ namespace KarlixID.Web.Controllers
                 query = query.Where(t => t.IsActive);
             }
 
-            var list = await query
+            var data = await query
                 .OrderBy(t => t.Name)
                 .ToListAsync();
 
-            return View(list);
+            return View(data);
         }
+
 
         // GET: /Tenants/Create
         public IActionResult Create()
