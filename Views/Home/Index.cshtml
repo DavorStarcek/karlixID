@@ -1,28 +1,53 @@
-﻿@using KarlixID.Web.Extensions
-@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpCtx
-@{
+﻿@{
     ViewData["Title"] = "Dobrodošli";
-    var tname = HttpCtx.HttpContext?.GetTenantName();
+    var isAuth = User?.Identity?.IsAuthenticated ?? false;
 }
 
-<div class="text-center mt-5">
-    <h1 class="display-5 mb-3">Dobrodošli u KarlixID</h1>
-    <p class="lead text-muted">
-        Centralni sustav za autentikaciju i upravljanje korisnicima unutar Karlix platforme.
-    </p>
+<div class="py-4">
+    <h1 class="display-6 mb-3">Dobrodošli u KarlixID</h1>
+    <p class="text-muted">Centralni sustav za autentikaciju i upravljanje korisnicima unutar Karlix platforme.</p>
 
-    @if (!string.IsNullOrWhiteSpace(tname))
+    @if (!isAuth)
     {
-        <p class="mb-2">
-            <span class="badge bg-secondary">🏷️ @tname</span>
-        </p>
+        <!-- Nije prijavljen: prikaži poziv na prijavu -->
+        <div class="mt-4">
+            <p class="mb-3">Molimo prijavite se za nastavak.</p>
+            <a class="btn btn-primary btn-lg"
+               asp-area="Identity"
+               asp-page="/Account/Login">Prijava</a>
+        </div>
     }
+    else
+    {
+        <!-- Prijavljen: smislen “landing” s brzim linkovima -->
+        <div class="alert alert-success mt-4 mb-4">
+            Uspješno ste prijavljeni kao <strong>@User?.Identity?.Name</strong>.
+        </div>
 
-    <p class="lead mb-4">Molimo prijavite se za nastavak.</p>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Korisnici</h5>
+                        <p class="card-text">Upravljanje korisnicima unutar tenanta.</p>
+                        <a class="btn btn-outline-primary" asp-controller="TenantUsers" asp-action="Index">Otvori</a>
+                    </div>
+                </div>
+            </div>
 
-    <a class="btn btn-primary btn-lg"
-       asp-area="Identity"
-       asp-page="/Account/Login">
-        Prijava
-    </a>
+            @* Tenanti – prikazuj samo GlobalAdmin *@
+            @if (User.IsInRole(KarlixID.Web.Models.AppRoleInfo.GlobalAdmin))
+            {
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Tenanti</h5>
+                            <p class="card-text">Pregled i administracija tenantima.</p>
+                            <a class="btn btn-outline-primary" asp-controller="Tenants" asp-action="Index">Otvori</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
 </div>

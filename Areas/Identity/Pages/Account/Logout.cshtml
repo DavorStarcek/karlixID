@@ -1,0 +1,16 @@
+﻿@page
+@using Microsoft.AspNetCore.Identity.UI.V5.Pages.Account.Internal
+@model LogoutModel
+@{
+    ViewData["Title"] = "Odjava";
+}
+
+<div class="text-center mt-5">
+    <h1 class="h4 mb-3">Odjava</h1>
+    <p>Jeste li sigurni da se želite odjaviti?</p>
+
+    <form method="post">
+        <button type="submit" class="btn btn-danger">Odjavi me</button>
+        <a asp-area="" asp-controller="Home" asp-action="Index" class="btn btn-secondary ms-2">Odustani</a>
+    </form>
+</div>

@@ -1,0 +1,12 @@
+﻿@page
+@using Microsoft.AspNetCore.Identity.UI.V5.Pages.Account.Internal
+@model AccessDeniedModel
+@{
+    ViewData["Title"] = "Pristup odbijen";
+}
+
+<div class="text-center mt-5">
+    <h1 class="text-danger">🚫 Pristup odbijen</h1>
+    <p class="lead">Nemate potrebna prava za pristup ovoj stranici.</p>
+    <a class="btn btn-primary mt-3" asp-area="" asp-controller="Home" asp-action="Index">Povratak na početnu</a>
+</div>

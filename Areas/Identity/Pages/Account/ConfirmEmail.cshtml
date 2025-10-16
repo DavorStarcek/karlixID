@@ -1,0 +1,24 @@
+﻿@page
+@using Microsoft.AspNetCore.Identity.UI.V5.Pages.Account.Internal
+@model ConfirmEmailModel
+@{
+    ViewData["Title"] = "Potvrda email adrese";
+}
+
+<div class="text-center mt-5">
+    <div class="card shadow-sm mx-auto" style="max-width: 600px;">
+        <div class="card-body p-4">
+            <h1 class="h4 mb-3 text-success">✅ Email adresa potvrđena</h1>
+
+            <p class="lead">
+                Hvala što ste potvrdili svoju adresu e-pošte.
+            </p>
+
+            <p>
+                Možete se sada prijaviti u sustav koristeći svoj račun.
+            </p>
+
+            <a asp-page="./Login" class="btn btn-primary">Idi na prijavu</a>
+        </div>
+    </div>
+</div>
