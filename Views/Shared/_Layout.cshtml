@@ -32,7 +32,7 @@
                         </li>
 
                         @* ---- Link vidljiv samo adminima (GlobalAdmin ili TenantAdmin) ---- *@
-                        @if (User.IsInRole(Roles.GlobalAdmin) || User.IsInRole(Roles.TenantAdmin))
+                        @if (User.IsInRole(AppRoleInfo.GlobalAdmin) || User.IsInRole(AppRoleInfo.TenantAdmin))
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-controller="TenantUsers" asp-action="Index">Korisnici</a>
@@ -40,7 +40,7 @@
                         }
 
                         @* ---- Link na Tenants (test) - samo GlobalAdmin ---- *@
-                        @if (User.IsInRole(Roles.GlobalAdmin))
+                        @if (User.IsInRole(AppRoleInfo.GlobalAdmin))
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-controller="Tenants" asp-action="Index">Tenanti (test)</a>

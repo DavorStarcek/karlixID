@@ -44,8 +44,8 @@ builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, AppUser
 // 📌 Authorization politike
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("GlobalAdminOnly", p => p.RequireRole(Roles.GlobalAdmin));
-    options.AddPolicy("TenantAdminOrGlobal", p => p.RequireRole(Roles.GlobalAdmin, Roles.TenantAdmin));
+    options.AddPolicy("GlobalAdminOnly", p => p.RequireRole(AppRoleInfo.GlobalAdmin));
+    options.AddPolicy("TenantAdminOrGlobal", p => p.RequireRole(AppRoleInfo.GlobalAdmin, AppRoleInfo.TenantAdmin));
 });
 
 // 📌 Middleware & Services
@@ -60,6 +60,8 @@ builder.Services.AddControllersWithViews()
     .AddViewLocalization()
     .AddDataAnnotationsLocalization();
 
+// ✅ Razor Pages (za Identity UI)
+builder.Services.AddRazorPages();
 
 // ✅✅ DATA PROTECTION — spremanje ključeva na disk (stabilni auth cookies kroz restarte/IIS recycle)
 var keysPath = Path.Combine(
@@ -73,13 +75,11 @@ builder.Services
     .PersistKeysToFileSystem(new DirectoryInfo(keysPath))
     .SetApplicationName("KarlixID");
 
-
 // // OPTIONAL ako si iza reverse proxy-a (Cloudflare/Nginx/HAProxy), uključi ForwardedHeaders:
 // builder.Services.Configure<ForwardedHeadersOptions>(opts =>
 // {
 //     opts.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 // });
-
 
 var app = builder.Build();
 
@@ -98,7 +98,6 @@ app.UseRouting();
 // // OPTIONAL: ako si iza reverse proxy-a, ovo ide prije auth (skini komentar ako treba)
 // app.UseForwardedHeaders();
 
-
 // 📌 Multitenant Middleware
 app.UseTenantResolver();
 
@@ -108,6 +107,9 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// ✅ Razor Pages (Identity UI rute: /Identity/Account/...)
+app.MapRazorPages();
 
 // 📌 Seed uloga i admin korisnika
 using (var scope = app.Services.CreateScope())
@@ -121,11 +123,11 @@ using (var scope = app.Services.CreateScope())
     // context.Database.Migrate();
 
     // Role
-    if (!await roleManager.RoleExistsAsync(Roles.GlobalAdmin))
-        await roleManager.CreateAsync(new IdentityRole(Roles.GlobalAdmin));
+    if (!await roleManager.RoleExistsAsync(AppRoleInfo.GlobalAdmin))
+        await roleManager.CreateAsync(new IdentityRole(AppRoleInfo.GlobalAdmin));
 
-    if (!await roleManager.RoleExistsAsync(Roles.TenantAdmin))
-        await roleManager.CreateAsync(new IdentityRole(Roles.TenantAdmin));
+    if (!await roleManager.RoleExistsAsync(AppRoleInfo.TenantAdmin))
+        await roleManager.CreateAsync(new IdentityRole(AppRoleInfo.TenantAdmin));
 
     // GlobalAdmin
     var globalAdmin = await userManager.FindByEmailAsync("admin@karlix.eu");
@@ -141,7 +143,7 @@ using (var scope = app.Services.CreateScope())
 
         var result = await userManager.CreateAsync(user, "Admin123!");
         if (result.Succeeded)
-            await userManager.AddToRoleAsync(user, Roles.GlobalAdmin);
+            await userManager.AddToRoleAsync(user, AppRoleInfo.GlobalAdmin);
     }
 
     // (Opcionalno) TenantAdmin za 'localhost'
@@ -161,7 +163,7 @@ using (var scope = app.Services.CreateScope())
             };
             var res = await userManager.CreateAsync(u, "TempPass123!");
             if (res.Succeeded)
-                await userManager.AddToRoleAsync(u, Roles.TenantAdmin);
+                await userManager.AddToRoleAsync(u, AppRoleInfo.TenantAdmin);
         }
     }
 }
