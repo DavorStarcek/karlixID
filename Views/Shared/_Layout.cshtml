@@ -27,9 +27,6 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
 
                         @* ---- Link vidljiv samo adminima (GlobalAdmin ili TenantAdmin) ---- *@
                         @if (User.IsInRole(AppRoleInfo.GlobalAdmin) || User.IsInRole(AppRoleInfo.TenantAdmin))
@@ -43,7 +40,7 @@
                         @if (User.IsInRole(AppRoleInfo.GlobalAdmin))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Tenants" asp-action="Index">Tenanti (test)</a>
+                                <a class="nav-link text-dark" asp-controller="Tenants" asp-action="Index">Tenanti</a>
                             </li>
                         }
                     </ul>
@@ -89,8 +86,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2025 - KarlixID.Web -
-            <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2025 - KarlixID.Web            
         </div>
     </footer>
 
