@@ -1,6 +1,9 @@
 ﻿@using Microsoft.AspNetCore.Identity
-@inject SignInManager<KarlixID.Web.Models.ApplicationUser> SignInManager
-@inject UserManager<KarlixID.Web.Models.ApplicationUser> UserManager
+@using KarlixID.Web.Models
+@using KarlixID.Web.Extensions
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpCtx
 
 <!DOCTYPE html>
 <html lang="hr">
@@ -15,21 +18,66 @@
         <div class="container-fluid">
             <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">KarlixID</a>
 
-            <div class="collapse navbar-collapse">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav"
+                    aria-controls="topNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            @{
+                var currentController = (ViewContext.RouteData.Values["controller"] as string) ?? "";
+                var currentAction = (ViewContext.RouteData.Values["action"] as string) ?? "";
+                string Active(string ctrl, string? act = null) =>
+                    (string.Equals(currentController, ctrl, StringComparison.OrdinalIgnoreCase) &&
+                     (act == null || string.Equals(currentAction, act, StringComparison.OrdinalIgnoreCase)))
+                    ? "active" : "";
+            }
+
+            <div class="collapse navbar-collapse" id="topNav">
                 <ul class="navbar-nav me-auto">
-                    @if (User.IsInRole("GlobalAdmin"))
+                    <li class="nav-item">
+                        <a class="nav-link @Active("Home","Index")" asp-controller="Home" asp-action="Index">Home</a>
+                    </li>
+
+                    @* Link vidljiv adminima (GlobalAdmin ili TenantAdmin) *@
+                    @if (User.IsInRole(AppRoleInfo.GlobalAdmin) || User.IsInRole(AppRoleInfo.TenantAdmin))
                     {
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Admin" asp-action="Index">Admin</a>
+                            <a class="nav-link @Active("TenantUsers","Index")" asp-controller="TenantUsers" asp-action="Index">Korisnici</a>
+                        </li>
+                    }
+
+                    @* Tenanti samo GlobalAdmin *@
+                    @if (User.IsInRole(AppRoleInfo.GlobalAdmin))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link @Active("Tenants","Index")" asp-controller="Tenants" asp-action="Index">Tenanti</a>
                         </li>
                     }
                 </ul>
+
                 <ul class="navbar-nav">
+                    @* Tenant badge *@
+                    @{
+                        var tname = HttpCtx.HttpContext?.GetTenantName();
+                    }
+                    @if (!string.IsNullOrWhiteSpace(tname))
+                    {
+                        <li class="nav-item d-flex align-items-center me-2">
+                            <span class="badge text-bg-secondary">🏷️ @tname</span>
+                        </li>
+                    }
+
                     @if (SignInManager.IsSignedIn(User))
                     {
-                        <li class="nav-item">
+                        // Prikaži DisplayName iz claimova ako postoji; fallback na Identity.Name
+                        var displayName =
+                        User.Claims.FirstOrDefault(c => c.Type == "name")?.Value // standardni "name"
+                        ?? User.Claims.FirstOrDefault(c => c.Type == "display_name")?.Value // ako koristiš custom
+                        ?? User.Identity?.Name;
+
+                        <li class="nav-item d-flex align-items-center">
                             <span class="navbar-text text-white me-2">
-                                @User.Identity.Name
+                                @displayName
                             </span>
                         </li>
                         <li class="nav-item">
@@ -41,15 +89,31 @@
                     else
                     {
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="Identity" asp-page="/Account/Login">Prijava</a>
+                            <a class="nav-link @Active("", "")" asp-area="Identity" asp-page="/Account/Login">Prijava</a>
                         </li>
                     }
+
                 </ul>
             </div>
         </div>
     </nav>
 
     <div class="container mt-4">
+        @if (TempData["Ok"] is string ok && !string.IsNullOrWhiteSpace(ok))
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @ok
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Zatvori"></button>
+            </div>
+        }
+        @if (TempData["Err"] is string err && !string.IsNullOrWhiteSpace(err))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @err
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Zatvori"></button>
+            </div>
+        }
+
         @RenderBody()
     </div>
 

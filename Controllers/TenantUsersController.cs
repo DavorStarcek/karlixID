@@ -31,7 +31,7 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> Index(string? q, Guid? tenantId, bool? onlyLocked)
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
 
             // baza tenanata za filter dropdown
             ViewBag.Tenants = await _db.Tenants
@@ -76,7 +76,7 @@ namespace KarlixID.Web.Controllers
                 .Select(x => new TenantUserRow
                 {
                     Id = x.u.Id,
-                    Email = x.u.Email!,
+                    Email = x.u.Email ?? string.Empty,
                     UserName = x.u.UserName,
                     TenantId = x.u.TenantId,
                     TenantName = x.tt != null ? x.tt.Name : "(no tenant)",
@@ -85,11 +85,11 @@ namespace KarlixID.Web.Controllers
                 })
                 .ToListAsync();
 
-            // Dohvati role
+            // Dohvati role (store-agnostic)
             foreach (var row in data)
             {
                 var usr = await _um.FindByIdAsync(row.Id);
-                var roles = await _um.GetRolesAsync(usr!);
+                var roles = usr != null ? await _um.GetRolesAsync(usr) : new List<string>();
                 row.RolesCsv = string.Join(", ", roles);
             }
 
@@ -101,7 +101,7 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> Create()
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
 
             ViewBag.CanPickTenant = isGlobal;
             ViewBag.Tenants = await _db.Tenants
@@ -121,12 +121,13 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> Create(CreateTenantUserVM model)
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
 
             if (!ModelState.IsValid)
             {
                 ViewBag.CanPickTenant = isGlobal;
-                ViewBag.Tenants = await _db.Tenants.OrderBy(t => t.Name)
+                ViewBag.Tenants = await _db.Tenants
+                    .OrderBy(t => t.Name)
                     .Select(t => new { t.Id, t.Name })
                     .ToListAsync();
                 return View(model);
@@ -160,7 +161,8 @@ namespace KarlixID.Web.Controllers
                     ModelState.AddModelError("", e.Description);
 
                 ViewBag.CanPickTenant = isGlobal;
-                ViewBag.Tenants = await _db.Tenants.OrderBy(t => t.Name)
+                ViewBag.Tenants = await _db.Tenants
+                    .OrderBy(t => t.Name)
                     .Select(t => new { t.Id, t.Name })
                     .ToListAsync();
                 return View(model);
@@ -183,7 +185,7 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> Edit(string id)
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
 
             var user = await _um.FindByIdAsync(id);
             if (user == null) return NotFound();
@@ -221,7 +223,7 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> Edit(TenantUserEditVM model)
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
 
             var user = await _um.FindByIdAsync(model.UserId);
             if (user == null) return NotFound();
@@ -266,7 +268,7 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> ResetPassword(string id)
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
 
             var user = await _um.FindByIdAsync(id);
             if (user == null) return NotFound();
@@ -283,7 +285,7 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> ResetPassword(ResetPasswordVM model)
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
 
             var user = await _um.FindByIdAsync(model.UserId);
             if (user == null) return NotFound();
@@ -313,7 +315,7 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> ToggleLock(string id)
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
 
             var user = await _um.FindByIdAsync(id);
             if (user == null) return NotFound();
@@ -335,7 +337,7 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> EditRoles(string id)
         {
             var me = await _um.GetUserAsync(User);
-            var editorIsGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+            var editorIsGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
 
             var user = await _um.FindByIdAsync(id);
             if (user == null) return NotFound();
@@ -368,14 +370,13 @@ namespace KarlixID.Web.Controllers
             return View(vm);
         }
 
-
         // POST: /TenantUsers/EditRoles
         [HttpPost, ValidateAntiForgeryToken]
         [Authorize(Policy = "TenantAdminOrGlobal")]
         public async Task<IActionResult> EditRoles(EditRolesVM model)
         {
             var me = await _um.GetUserAsync(User);
-            var editorIsGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+            var editorIsGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
 
             var user = await _um.FindByIdAsync(model.UserId);
             if (user == null) return NotFound();
@@ -425,7 +426,5 @@ namespace KarlixID.Web.Controllers
             TempData["Ok"] = "Uloge su uspješno ažurirane.";
             return RedirectToAction(nameof(Index));
         }
-
-
     }
 }

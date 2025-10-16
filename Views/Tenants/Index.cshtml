@@ -5,6 +5,11 @@
 
 <h2>@ViewData["Title"]</h2>
 
+@if (TempData["Ok"] is string ok && !string.IsNullOrWhiteSpace(ok))
+{
+    <div class="alert alert-success">@ok</div>
+}
+
 @if (!Model.Any())
 {
     <div class="alert alert-info">Nema zapisa u tablici Tenants.</div>
@@ -18,6 +23,7 @@ else
                 <th>Naziv</th>
                 <th>Hostname</th>
                 <th>Aktivan</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -27,7 +33,13 @@ else
                     <td class="text-muted">@t.Id</td>
                     <td>@t.Name</td>
                     <td>@t.Hostname</td>
-                    <td>@(t.IsActive ? "True" : "False")</td>
+                    <td>@(t.IsActive ? "Da" : "Ne")</td>
+                    <td class="text-nowrap">
+                        <a class="btn btn-sm btn-outline-primary"
+                           asp-controller="Tenants"
+                           asp-action="Edit"
+                           asp-route-id="@t.Id">Uredi</a>
+                    </td>
                 </tr>
             }
         </tbody>

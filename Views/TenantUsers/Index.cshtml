@@ -9,6 +9,15 @@
 
 <h2>@ViewData["Title"]</h2>
 
+@if (ViewBag.FilterTenantId != null)
+{
+    <div class="alert alert-secondary py-2">
+        Prikazani su samo korisnici odabranog tenanta.
+        <a class="btn btn-sm btn-outline-secondary ms-2" asp-action="Index">Makni filter</a>
+    </div>
+}
+
+
 <form method="get" class="row g-2 mb-3">
     <div class="col-md-4">
         <input name="q" value="@q" class="form-control" placeholder="Traži po emailu / imenu..." />
