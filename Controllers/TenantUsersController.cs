@@ -335,29 +335,39 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> EditRoles(string id)
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+            var editorIsGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
 
             var user = await _um.FindByIdAsync(id);
             if (user == null) return NotFound();
 
-            if (!isGlobal && me!.TenantId != user.TenantId)
+            // sigurnosni tenant scope (TenantAdmin smije samo svoj tenant)
+            if (!editorIsGlobal && me!.TenantId != user.TenantId)
                 return Forbid();
 
-            var allRoles = await _rm.Roles.OrderBy(r => r.Name).ToListAsync();
+            var allRoles = await _rm.Roles
+                .OrderBy(r => r.Name)
+                .Select(r => r.Name!)
+                .ToListAsync();
+
             var userRoles = await _um.GetRolesAsync(user);
 
             var vm = new EditRolesVM
             {
                 UserId = user.Id,
                 Email = user.Email ?? user.UserName ?? "",
-                Roles = allRoles.Select(r => new EditRolesVM.RoleItem
+                EditorIsGlobalAdmin = editorIsGlobal,
+                Roles = allRoles.Select(r => new RoleItem
                 {
-                    Name = r.Name!,
-                    Selected = userRoles.Contains(r.Name!)
+                    Name = r,
+                    Selected = userRoles.Contains(r),
+                    // TenantAdmin NE smije mijenjati GlobalAdmin ni TenantAdmin
+                    Locked = !editorIsGlobal && (r == AppRoleInfo.GlobalAdmin || r == AppRoleInfo.TenantAdmin)
                 }).ToList()
             };
+
             return View(vm);
         }
+
 
         // POST: /TenantUsers/EditRoles
         [HttpPost, ValidateAntiForgeryToken]
@@ -365,36 +375,57 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> EditRoles(EditRolesVM model)
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+            var editorIsGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
 
             var user = await _um.FindByIdAsync(model.UserId);
             if (user == null) return NotFound();
 
-            if (!isGlobal && me!.TenantId != user.TenantId)
+            if (!editorIsGlobal && me!.TenantId != user.TenantId)
                 return Forbid();
 
-            if (!ModelState.IsValid)
-                return View(model);
+            var existing = await _um.GetRolesAsync(user);
 
-            var current = await _um.GetRolesAsync(user);
-            var wanted = model.Roles.Where(x => x.Selected).Select(x => x.Name).ToList();
-
-            var toAdd = wanted.Except(current);
-            var toRemove = current.Except(wanted);
-
-            var addRes = await _um.AddToRolesAsync(user, toAdd);
-            var remRes = await _um.RemoveFromRolesAsync(user, toRemove);
-
-            if (!addRes.Succeeded || !remRes.Succeeded)
+            // ako editor NIJE globalni → prisilno „vrati“ zaključane role na postojeće stanje
+            if (!editorIsGlobal)
             {
-                foreach (var e in addRes.Errors.Concat(remRes.Errors))
-                    ModelState.AddModelError("", e.Description);
-                return View(model);
+                foreach (var lockedRole in new[] { AppRoleInfo.GlobalAdmin, AppRoleInfo.TenantAdmin })
+                {
+                    var item = model.Roles.FirstOrDefault(x => x.Name == lockedRole);
+                    if (item != null)
+                    {
+                        item.Selected = existing.Contains(lockedRole); // ignoriraj promjenu
+                    }
+                }
             }
 
-            TempData["Ok"] = "Uloge su ažurirane.";
+            var desired = model.Roles.Where(r => r.Selected).Select(r => r.Name).ToList();
+
+            var toAdd = desired.Except(existing).ToList();
+            var toRemove = existing.Except(desired).ToList();
+
+            if (toAdd.Any())
+            {
+                var addRes = await _um.AddToRolesAsync(user, toAdd);
+                if (!addRes.Succeeded)
+                {
+                    foreach (var e in addRes.Errors) ModelState.AddModelError("", e.Description);
+                    return View(model);
+                }
+            }
+            if (toRemove.Any())
+            {
+                var remRes = await _um.RemoveFromRolesAsync(user, toRemove);
+                if (!remRes.Succeeded)
+                {
+                    foreach (var e in remRes.Errors) ModelState.AddModelError("", e.Description);
+                    return View(model);
+                }
+            }
+
+            TempData["Ok"] = "Uloge su uspješno ažurirane.";
             return RedirectToAction(nameof(Index));
         }
+
 
     }
 }

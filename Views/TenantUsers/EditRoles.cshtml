@@ -3,42 +3,55 @@
     ViewData["Title"] = "Uredi uloge";
 }
 
-<h2>@ViewData["Title"]</h2>
-<p class="text-muted">Korisnik: <strong>@Model.Email</strong></p>
+<h2 class="mb-3">@ViewData["Title"]</h2>
 
-<form asp-action="EditRoles" method="post">
-    <input type="hidden" asp-for="UserId" />
+<div class="mb-3">
+    <strong>Korisnik:</strong> @Model.Email
+    @if (!Model.EditorIsGlobalAdmin)
+    {
+        <span class="badge bg-secondary ms-2" title="Uređujete kao TenantAdmin">TenantAdmin editor</span>
+    }
+</div>
 
-    <div class="card mb-3">
-        <div class="card-header">Uloge</div>
-        <div class="card-body">
-            @if (Model.Roles == null || !Model.Roles.Any())
+<form asp-action="EditRoles" method="post" class="card">
+    <div class="card-body">
+        <input type="hidden" asp-for="UserId" />
+
+        <div class="row">
+            @for (int i = 0; i < Model.Roles.Count; i++)
             {
-                <div class="alert alert-info mb-0">Nema definiranih uloga.</div>
-            }
-            else
-            {
-                <div class="row">
-                    @for (int i = 0; i < Model.Roles.Count; i++)
-                    {
-                        var id = $"Roles_{i}__Selected";
-                        <div class="col-md-4 mb-2">
-                            <div class="form-check">
-                                <input class="form-check-input" id="@id" asp-for="Roles[i].Selected" />
-                                <label class="form-check-label" for="@id">@Model.Roles[i].Name</label>
-                                <input type="hidden" asp-for="Roles[i].Name" />
-                            </div>
-                        </div>
-                    }
+                var r = Model.Roles[i];
+                var id = $"Roles_{i}__Selected";
+                <div class="col-md-4 mb-2">
+                    <div class="form-check">
+                        @* VARIJANTA 1: zaključano → disabled *@
+                        @if (r.Locked)
+                        {
+                            <input class="form-check-input" id="@id"
+                                   asp-for="Roles[i].Selected"
+                                   disabled="disabled" />
+                            <label class="form-check-label" for="@id">
+                                @r.Name <span class="ms-1" title="Zaključano – ne možete mijenjati ovu ulogu">🔒</span>
+                            </label>
+                            <input type="hidden" asp-for="Roles[i].Name" />
+                            @* disabled input se ne šalje → pošalji mirror vrijednost *@
+                            <input type="hidden" name="Roles[@i].Selected" value="@(r.Selected ? "true" : "false")" />
+                        }
+                        else
+                        {
+                            @* VARIJANTA 2: slobodno *@
+                            <input class="form-check-input" id="@id" asp-for="Roles[i].Selected" />
+                            <label class="form-check-label" for="@id">@r.Name</label>
+                            <input type="hidden" asp-for="Roles[i].Name" />
+                        }
+                    </div>
                 </div>
             }
         </div>
     </div>
 
-    <button type="submit" class="btn btn-primary">Spremi</button>
-    <a asp-action="Index" class="btn btn-secondary">Natrag</a>
+    <div class="card-footer d-flex justify-content-between">
+        <a asp-action="Index" class="btn btn-outline-secondary">Natrag</a>
+        <button type="submit" class="btn btn-primary">Spremi</button>
+    </div>
 </form>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
