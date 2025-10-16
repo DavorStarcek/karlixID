@@ -1,6 +1,6 @@
 ﻿using KarlixID.Web.Data;
 using KarlixID.Web.Models;
-using KarlixID.Web.Extensions;
+using KarlixID.Web.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -8,171 +8,199 @@ using Microsoft.EntityFrameworkCore;
 
 namespace KarlixID.Web.Controllers
 {
-    [Authorize(Policy = "TenantAdminOrGlobal")]
+    [Authorize] // dodatno suzit ćemo po akcijama
     public class TenantUsersController : Controller
     {
         private readonly ApplicationDbContext _db;
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly UserManager<ApplicationUser> _um;
+        private readonly RoleManager<IdentityRole> _rm;
 
-        public TenantUsersController(
-            ApplicationDbContext db,
-            UserManager<ApplicationUser> userManager,
-            RoleManager<IdentityRole> roleManager)
+        public TenantUsersController(ApplicationDbContext db,
+            UserManager<ApplicationUser> um,
+            RoleManager<IdentityRole> rm)
         {
             _db = db;
-            _userManager = userManager;
-            _roleManager = roleManager;
+            _um = um;
+            _rm = rm;
         }
 
-        // GET: /TenantUsers
+        // LISTA
+        [Authorize(Policy = "TenantAdminOrGlobal")]
         public async Task<IActionResult> Index()
         {
-            var myTenantId = HttpContext.GetTenantId();
+            var me = await _um.GetUserAsync(User);
+            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
 
-            IQueryable<ApplicationUser> q = _userManager.Users;
+            // baza: Users + Tenants + Roles
+            var q = from u in _db.Users.AsNoTracking()
+                    join t in _db.Tenants.AsNoTracking() on u.TenantId equals t.Id into gj
+                    from tt in gj.DefaultIfEmpty()
+                    select new { u, tt };
 
-            if (!User.IsInRole(Roles.GlobalAdmin))
+            if (!isGlobal && me?.TenantId != null)
             {
-                if (myTenantId == null) return Forbid();
-                q = q.Where(u => u.TenantId == myTenantId);
+                q = q.Where(x => x.u.TenantId == me!.TenantId);
             }
 
-            var users = await q
-                .Select(u => new TenantUserRow
+            var data = await q
+                .OrderBy(x => x.tt!.Name)
+                .ThenBy(x => x.u.Email)
+                .Select(x => new TenantUserRow
                 {
-                    Id = u.Id,
-                    Email = u.Email!,
-                    UserName = u.UserName!,
-                    TenantId = u.TenantId
+                    Id = x.u.Id,
+                    Email = x.u.Email!,
+                    UserName = x.u.UserName,
+                    TenantId = x.u.TenantId,
+                    TenantName = x.tt != null ? x.tt.Name : "(no tenant)",
+                    EmailConfirmed = x.u.EmailConfirmed,
+                    LockedOut = x.u.LockoutEnd != null && x.u.LockoutEnd > DateTimeOffset.UtcNow
                 })
-                .OrderBy(x => x.Email)
                 .ToListAsync();
 
-            return View(users);
-        }
-
-        // GET: /TenantUsers/Create
-        public IActionResult Create()
-        {
-            return View(new CreateTenantUserVM());
-        }
-
-        // POST: /TenantUsers/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(CreateTenantUserVM vm)
-        {
-            if (!ModelState.IsValid) return View(vm);
-
-            var myTenantId = HttpContext.GetTenantId();
-
-            // GlobalAdmin može kreirati usera za bilo koji tenant; TenantAdmin samo za svoj
-            var targetTenant = vm.TenantId ?? myTenantId;
-            if (!User.IsInRole(Roles.GlobalAdmin))
+            // roles za svakog (odvojeno, da je store-agnostic)
+            foreach (var row in data)
             {
-                if (myTenantId == null || targetTenant != myTenantId) return Forbid();
+                var usr = await _um.FindByIdAsync(row.Id);
+                var roles = await _um.GetRolesAsync(usr!);
+                row.RolesCsv = string.Join(", ", roles);
             }
-            if (targetTenant == null) { ModelState.AddModelError("", "Tenant nije definiran."); return View(vm); }
+
+            return View(data);
+        }
+
+        // CREATE (GET)
+        [Authorize(Policy = "TenantAdminOrGlobal")]
+        public async Task<IActionResult> Create()
+        {
+            var me = await _um.GetUserAsync(User);
+            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+
+            ViewBag.CanPickTenant = isGlobal;
+            ViewBag.Tenants = await _db.Tenants
+                .OrderBy(t => t.Name)
+                .Select(t => new { t.Id, t.Name })
+                .ToListAsync();
+
+            return View(new CreateTenantUserVM
+            {
+                TenantId = isGlobal ? null : me!.TenantId
+            });
+        }
+
+        // CREATE (POST)
+        [HttpPost, ValidateAntiForgeryToken]
+        [Authorize(Policy = "TenantAdminOrGlobal")]
+        public async Task<IActionResult> Create(CreateTenantUserVM model)
+        {
+            var me = await _um.GetUserAsync(User);
+            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+
+            if (!ModelState.IsValid)
+                return await Create();
+
+            // Ako nije GlobalAdmin, forsiramo njegov tenant
+            var tenantId = isGlobal ? model.TenantId : me!.TenantId;
 
             var user = new ApplicationUser
             {
-                UserName = vm.Email,
-                Email = vm.Email,
-                EmailConfirmed = false,
-                TenantId = targetTenant.Value
+                Email = model.Email,
+                UserName = model.Email,
+                EmailConfirmed = true,
+                TenantId = tenantId ?? Guid.Empty // ako je null, stavi Guid.Empty
             };
 
-            // privremena lozinka
-            var tempPassword = string.IsNullOrWhiteSpace(vm.Password) ? "TempPass123!" : vm.Password!;
-            var result = await _userManager.CreateAsync(user, tempPassword);
-
+            var result = await _um.CreateAsync(user, model.Password);
             if (!result.Succeeded)
             {
-                foreach (var e in result.Errors) ModelState.AddModelError("", e.Description);
-                return View(vm);
+                foreach (var e in result.Errors)
+                    ModelState.AddModelError("", e.Description);
+                return await Create();
             }
 
-            // uloga TenantAdmin (po izboru)
-            if (vm.MakeTenantAdmin)
+            // Role
+            if (isGlobal && model.MakeTenantAdmin)
             {
-                if (!await _roleManager.RoleExistsAsync(Roles.TenantAdmin))
-                    await _roleManager.CreateAsync(new IdentityRole(Roles.TenantAdmin));
-                await _userManager.AddToRoleAsync(user, Roles.TenantAdmin);
+                if (!await _rm.RoleExistsAsync(AppRoleInfo.TenantAdmin))
+                    await _rm.CreateAsync(new IdentityRole(AppRoleInfo.TenantAdmin));
+
+                await _um.AddToRoleAsync(user, AppRoleInfo.TenantAdmin);
             }
 
-            TempData["msg"] = $"Korisnik {vm.Email} kreiran.";
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: /TenantUsers/ResetPassword/{id}
+        // RESET PASSWORD (GET)
+        [Authorize(Policy = "TenantAdminOrGlobal")]
         public async Task<IActionResult> ResetPassword(string id)
         {
-            var user = await _userManager.FindByIdAsync(id);
+            var me = await _um.GetUserAsync(User);
+            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+
+            var user = await _um.FindByIdAsync(id);
             if (user == null) return NotFound();
 
             // sigurnosna provjera tenant scope-a
-            if (!User.IsInRole(Roles.GlobalAdmin))
-            {
-                var myTenantId = HttpContext.GetTenantId();
-                if (myTenantId == null || user.TenantId != myTenantId) return Forbid();
-            }
+            if (!isGlobal && me!.TenantId != user.TenantId)
+                return Forbid();
 
-            return View(new ResetPasswordVM { UserId = id, Email = user.Email! });
+            return View(new ResetPasswordVM { UserId = id });
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ResetPassword(ResetPasswordVM vm)
+        // RESET PASSWORD (POST)
+        [HttpPost, ValidateAntiForgeryToken]
+        [Authorize(Policy = "TenantAdminOrGlobal")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordVM model)
         {
-            if (!ModelState.IsValid) return View(vm);
+            var me = await _um.GetUserAsync(User);
+            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
 
-            var user = await _userManager.FindByIdAsync(vm.UserId);
+            var user = await _um.FindByIdAsync(model.UserId);
             if (user == null) return NotFound();
 
-            if (!User.IsInRole(Roles.GlobalAdmin))
+            if (!isGlobal && me!.TenantId != user.TenantId)
+                return Forbid();
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var token = await _um.GeneratePasswordResetTokenAsync(user);
+            var res = await _um.ResetPasswordAsync(user, token, model.NewPassword);
+
+            if (!res.Succeeded)
             {
-                var myTenantId = HttpContext.GetTenantId();
-                if (myTenantId == null || user.TenantId != myTenantId) return Forbid();
+                foreach (var e in res.Errors)
+                    ModelState.AddModelError("", e.Description);
+                return View(model);
             }
 
-            // reset bez email slanja (nema SMTP) -> remove+add password
-            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            var result = await _userManager.ResetPasswordAsync(user, token, vm.NewPassword);
-
-            if (!result.Succeeded)
-            {
-                foreach (var e in result.Errors) ModelState.AddModelError("", e.Description);
-                return View(vm);
-            }
-
-            TempData["msg"] = $"Lozinka resetirana za {user.Email}.";
             return RedirectToAction(nameof(Index));
         }
-    }
 
-    public class TenantUserRow
-    {
-        public string Id { get; set; } = default!;
-        public string Email { get; set; } = default!;
-        public string UserName { get; set; } = default!;
-        public Guid TenantId { get; set; }
-    }
+        // LOCK/UNLOCK
+        [Authorize(Policy = "TenantAdminOrGlobal")]
+        public async Task<IActionResult> ToggleLock(string id)
+        {
+            var me = await _um.GetUserAsync(User);
+            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
 
-    public class CreateTenantUserVM
-    {
-        public Guid? TenantId { get; set; } // GlobalAdmin može birati; TenantAdmin ne mora slati
+            var user = await _um.FindByIdAsync(id);
+            if (user == null) return NotFound();
 
-        public string Email { get; set; } = default!;
-        public string? Password { get; set; } // ako prazno -> TempPass123!
+            if (!isGlobal && me!.TenantId != user.TenantId)
+                return Forbid();
 
-        public bool MakeTenantAdmin { get; set; }
-    }
+            var locked = user.LockoutEnd != null && user.LockoutEnd > DateTimeOffset.UtcNow;
+            if (locked)
+            {
+                user.LockoutEnd = null;
+            }
+            else
+            {
+                user.LockoutEnd = DateTimeOffset.UtcNow.AddYears(100);
+            }
+            await _um.UpdateAsync(user);
 
-    public class ResetPasswordVM
-    {
-        public string UserId { get; set; } = default!;
-        public string Email { get; set; } = default!;
-        public string NewPassword { get; set; } = default!;
+            return RedirectToAction(nameof(Index));
+        }
     }
 }

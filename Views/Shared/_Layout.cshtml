@@ -38,6 +38,14 @@
                                 <a class="nav-link text-dark" asp-controller="TenantUsers" asp-action="Index">Korisnici</a>
                             </li>
                         }
+
+                        @* ---- Link na Tenants (test) - samo GlobalAdmin ---- *@
+                        @if (User.IsInRole(Roles.GlobalAdmin))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Tenants" asp-action="Index">Tenanti (test)</a>
+                            </li>
+                        }
                     </ul>
 
                     @* 👇 Tenant badge i login desno u navbaru *@

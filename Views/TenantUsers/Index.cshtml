@@ -1,14 +1,12 @@
-﻿@model List<KarlixID.Web.Controllers.TenantUserRow>
-
-<h2>Korisnici</h2>
-
-@if (TempData["msg"] != null)
-{
-    <div class="alert alert-success">@TempData["msg"]</div>
+﻿@model IEnumerable<KarlixID.Web.Models.ViewModels.TenantUserRow>
+@{
+    ViewData["Title"] = "Tenant korisnici";
 }
 
+<h2>@ViewData["Title"]</h2>
+
 <p>
-    <a asp-action="Create" class="btn btn-primary">+ Dodaj korisnika</a>
+    <a class="btn btn-primary" asp-action="Create">+ Novi korisnik</a>
 </p>
 
 @if (!Model.Any())
@@ -20,8 +18,11 @@ else
     <table class="table table-striped">
         <thead>
             <tr>
+                <th>Tenant</th>
                 <th>Email</th>
-                <th>TenantId</th>
+                <th>Uloge</th>
+                <th>Potvrđen</th>
+                <th>Zaključan</th>
                 <th></th>
             </tr>
         </thead>
@@ -29,12 +30,14 @@ else
             @foreach (var u in Model)
             {
                 <tr>
+                    <td>@u.TenantName</td>
                     <td>@u.Email</td>
-                    <td>@u.TenantId</td>
-                    <td>
-                        <a asp-action="ResetPassword" asp-route-id="@u.Id" class="btn btn-sm btn-outline-secondary">
-                            Reset lozinke
-                        </a>
+                    <td>@u.RolesCsv</td>
+                    <td>@(u.EmailConfirmed ? "Da" : "Ne")</td>
+                    <td>@(u.LockedOut ? "Da" : "Ne")</td>
+                    <td class="text-nowrap">
+                        <a class="btn btn-sm btn-outline-secondary" asp-action="ResetPassword" asp-route-id="@u.Id">Lozinka</a>
+                        <a class="btn btn-sm btn-outline-warning" asp-action="ToggleLock" asp-route-id="@u.Id">@((u.LockedOut) ? "Otključaj" : "Zaključaj")</a>
                     </td>
                 </tr>
             }

@@ -1,49 +1,50 @@
-﻿@model KarlixID.Web.Controllers.CreateTenantUserVM
-@using KarlixID.Web.Models
-@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpCtx
-@using KarlixID.Web.Extensions
-
+﻿@model KarlixID.Web.Models.ViewModels.CreateTenantUserVM
 @{
-    ViewData["Title"] = "Dodaj korisnika";
-    var isGlobal = User.IsInRole(Roles.GlobalAdmin);
-    var myTid = HttpCtx.HttpContext?.GetTenantId();
+    ViewData["Title"] = "Novi korisnik";
+    var canPickTenant = (bool)(ViewBag.CanPickTenant ?? false);
+    var tenants = ViewBag.Tenants as IEnumerable<object>;
 }
 
-<h2>Dodaj korisnika</h2>
+<h2>@ViewData["Title"]</h2>
 
-<form asp-action="Create" method="post">
+<form asp-action="Create" method="post" class="mt-3">
     <div class="mb-3">
-        <label class="form-label">Email</label>
+        <label asp-for="Email" class="form-label"></label>
         <input asp-for="Email" class="form-control" />
         <span asp-validation-for="Email" class="text-danger"></span>
     </div>
 
-    @if (isGlobal)
+    <div class="mb-3">
+        <label asp-for="Password" class="form-label"></label>
+        <input asp-for="Password" type="password" class="form-control" />
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+
+    @if (canPickTenant)
     {
         <div class="mb-3">
-            <label class="form-label">TenantId</label>
-            <input asp-for="TenantId" class="form-control" />
-            <div class="form-text">Ako prazno, neće proći (GlobalAdmin mora zadati TenantId).</div>
+            <label class="form-label">Tenant</label>
+            <select class="form-select" asp-for="TenantId">
+                <option value="">— odaberi —</option>
+                @foreach (dynamic t in tenants!)
+                {
+                    <option value="@t.Id">@t.Name</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-check mb-3">
+            <input class="form-check-input" asp-for="MakeTenantAdmin" />
+            <label class="form-check-label" asp-for="MakeTenantAdmin">Dodijeli ulogu TenantAdmin</label>
         </div>
     }
     else
     {
-        <input type="hidden" name="TenantId" value="@myTid" />
+        <input type="hidden" asp-for="TenantId" />
     }
 
-    <div class="mb-3">
-        <label class="form-label">Privremena lozinka</label>
-        <input asp-for="Password" class="form-control" />
-        <div class="form-text">Ako ostaviš prazno, koristit će se: <code>TempPass123!</code></div>
-    </div>
-
-    <div class="form-check mb-3">
-        <input asp-for="MakeTenantAdmin" class="form-check-input" />
-        <label class="form-check-label">Učini korisnika TenantAdmin</label>
-    </div>
-
-    <button class="btn btn-primary" type="submit">Spremi</button>
-    <a asp-action="Index" class="btn btn-secondary">Nazad</a>
+    <button type="submit" class="btn btn-primary">Spremi</button>
+    <a asp-action="Index" class="btn btn-secondary">Natrag</a>
 </form>
 
 @section Scripts {
