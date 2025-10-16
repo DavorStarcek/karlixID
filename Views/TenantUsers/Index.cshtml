@@ -1,92 +1,74 @@
 ﻿@model IEnumerable<KarlixID.Web.Models.ViewModels.TenantUserRow>
 @{
     ViewData["Title"] = "Tenant korisnici";
+    var tenants = (IEnumerable<dynamic>)(ViewBag.Tenants ?? Array.Empty<object>());
+    string? q = ViewBag.FilterQ as string;
+    Guid? tenantId = ViewBag.FilterTenantId as Guid?;
+    bool onlyLocked = ViewBag.FilterOnlyLocked is bool b && b;
 }
 
-<div class="d-flex align-items-center justify-content-between mb-3">
-    <h2 class="m-0">@ViewData["Title"]</h2>
-    <a class="btn btn-primary" asp-action="Create">+ Novi korisnik</a>
-</div>
+<h2>@ViewData["Title"]</h2>
 
-@if (!Model?.Any() ?? true)
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-4">
+        <input name="q" value="@q" class="form-control" placeholder="Traži po emailu / imenu..." />
+    </div>
+    <div class="col-md-4">
+        <select name="tenantId" class="form-select">
+            <option value="">-- Svi tenanti --</option>
+            @foreach (var t in tenants)
+            {
+                var selected = tenantId.HasValue && tenantId.Value.ToString().Equals(t.Id.ToString(), StringComparison.OrdinalIgnoreCase);
+                <option value="@t.Id" selected="@(selected ? "selected" : null)">@t.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2 form-check d-flex align-items-center">
+        <input class="form-check-input me-2" type="checkbox" id="onlyLocked" name="onlyLocked" value="true" @(onlyLocked ? "checked" : null) />
+        <label class="form-check-label" for="onlyLocked">Samo zaključani</label>
+    </div>
+    <div class="col-md-2">
+        <button class="btn btn-outline-primary w-100" type="submit">Filtriraj</button>
+    </div>
+</form>
+
+<p>
+    <a class="btn btn-primary" asp-action="Create">+ Novi korisnik</a>
+</p>
+
+@if (!Model.Any())
 {
-    <div class="alert alert-info mb-0">Nema korisnika.</div>
+    <div class="alert alert-info">Nema korisnika.</div>
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table table-striped align-middle">
-            <thead class="table-light">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Tenant</th>
+                <th>Email</th>
+                <th>Uloge</th>
+                <th>Potvrđen</th>
+                <th>Zaključan</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in Model)
+            {
                 <tr>
-                    <th style="width: 22%">Tenant</th>
-                    <th style="width: 28%">Email</th>
-                    <th style="width: 25%">Uloge</th>
-                    <th style="width: 10%">Potvrđen</th>
-                    <th style="width: 10%">Zaključan</th>
-                    <th style="width: 15%" class="text-end">Akcije</th>
+                    <td>@u.TenantName</td>
+                    <td>@u.Email</td>
+                    <td>@u.RolesCsv</td>
+                    <td>@(u.EmailConfirmed ? "Da" : "Ne")</td>
+                    <td>@(u.LockedOut ? "Da" : "Ne")</td>
+                    <td class="text-nowrap">
+                        <a class="btn btn-sm btn-outline-secondary" asp-action="Edit" asp-route-id="@u.Id">Uredi</a>
+                        <a class="btn btn-sm btn-outline-secondary" asp-action="ResetPassword" asp-route-id="@u.Id">Lozinka</a>
+                        <a class="btn btn-sm btn-outline-warning" asp-action="ToggleLock" asp-route-id="@u.Id">@((u.LockedOut) ? "Otključaj" : "Zaključaj")</a>
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach (var u in Model)
-                {
-                    <tr>
-                        <td>
-                            @if (!string.IsNullOrWhiteSpace(u.TenantName))
-                            {
-                                <span class="badge bg-secondary">@u.TenantName</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-light text-dark">(no tenant)</span>
-                            }
-                        </td>
-                        <td>
-                            <div class="fw-semibold">@u.Email</div>
-                            @if (!string.IsNullOrWhiteSpace(u.UserName) && u.UserName != u.Email)
-                            {
-                                <div class="text-muted small">@u.UserName</div>
-                            }
-                        </td>
-                        <td>
-                            @if (string.IsNullOrWhiteSpace(u.RolesCsv))
-                            {
-                                <span class="badge bg-light text-muted">—</span>
-                            }
-                            else
-                            {
-                                var roles = u.RolesCsv.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-                                foreach (var r in roles)
-                                {
-                                    var roleTrim = r.Trim();
-                                    var cls = roleTrim.Equals(AppRoleInfo.GlobalAdmin, StringComparison.OrdinalIgnoreCase)
-                                    ? "bg-danger"
-                                    : roleTrim.Equals(AppRoleInfo.TenantAdmin, StringComparison.OrdinalIgnoreCase)
-                                    ? "bg-info"
-                                    : "bg-dark";
-
-                                    <span class="badge @cls me-1">@roleTrim</span>
-                                }
-                            }
-                        </td>
-                        <td>@(u.EmailConfirmed ? "Da" : "Ne")</td>
-                        <td>@(u.LockedOut ? "Da" : "Ne")</td>
-                        <td class="text-end text-nowrap">
-                            <a class="btn btn-sm btn-outline-secondary"
-                               asp-action="ResetPassword"
-                               asp-route-id="@u.Id"
-                               title="Reset lozinke">
-                                Lozinka
-                            </a>
-                            <a class="btn btn-sm btn-outline-warning ms-1"
-                               asp-action="ToggleLock"
-                               asp-route-id="@u.Id"
-                               title="@(u.LockedOut ? "Otključaj korisnika" : "Zaključaj korisnika")">
-                                @(u.LockedOut ? "Otključaj" : "Zaključaj")
-                            </a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+            }
+        </tbody>
+    </table>
 }

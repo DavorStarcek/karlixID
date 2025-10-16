@@ -1,16 +1,20 @@
-﻿@model KarlixID.Web.Models.ApplicationUser
-@{
+﻿@{
     ViewData["Title"] = "Obriši korisnika";
+    var email = ViewBag.UserEmail as string ?? "(n/a)";
+    var id = ViewBag.UserId as string ?? "";
 }
 
-<h2>@ViewData["Title"]</h2>
-<hr />
-<div class="alert alert-warning">
-    <p>Jeste li sigurni da želite obrisati korisnika <strong>@Model.Email</strong>?</p>
+<h2 class="mb-3">@ViewData["Title"]</h2>
+
+<div class="alert alert-danger">
+    <div class="fw-bold">Jesi li siguran da želiš obrisati korisnika?</div>
+    <div>Korisnik: <span class="fw-semibold">@email</span></div>
 </div>
 
 <form asp-action="Delete" method="post">
-    <input type="hidden" name="id" value="@Model.Id" />
-    <button type="submit" class="btn btn-danger">Obriši</button>
-    <a asp-action="Index" class="btn btn-outline-secondary">Odustani</a>
+    <input type="hidden" name="id" value="@id" />
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-danger">Da, obriši</button>
+        <a class="btn btn-secondary" asp-action="Index">Odustani</a>
+    </div>
 </form>

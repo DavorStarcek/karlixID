@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace KarlixID.Web.Controllers
 {
-    [Authorize] // dodatno suzit ćemo po akcijama
+    [Authorize]
     public class TenantUsersController : Controller
     {
         private readonly ApplicationDbContext _db;
@@ -25,25 +25,52 @@ namespace KarlixID.Web.Controllers
             _rm = rm;
         }
 
-        // LISTA
+        // LISTA + search/filter
+        // /TenantUsers?q=nešto&tenantId=GUID&onlyLocked=true
         [Authorize(Policy = "TenantAdminOrGlobal")]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? q, Guid? tenantId, bool? onlyLocked)
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
+            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
 
-            // 💡 Korištenje _um.Users (IQueryable<ApplicationUser>) umjesto _db.Users
-            var q = from u in _um.Users.AsNoTracking()
-                    join t in _db.Tenants.AsNoTracking() on u.TenantId equals t.Id into gj
-                    from tt in gj.DefaultIfEmpty()
-                    select new { u, tt };
+            // baza tenanata za filter dropdown
+            ViewBag.Tenants = await _db.Tenants
+                .OrderBy(t => t.Name)
+                .Select(t => new { t.Id, t.Name })
+                .ToListAsync();
 
+            ViewBag.FilterQ = q;
+            ViewBag.FilterTenantId = tenantId;
+            ViewBag.FilterOnlyLocked = onlyLocked ?? false;
+
+            // Polazište – svi Identity useri
+            var usersQ = _um.Users.AsNoTracking();
+
+            // Scope: ako nije GlobalAdmin → vidi samo svoj tenant
             if (!isGlobal && me?.TenantId != null)
-            {
-                q = q.Where(x => x.u.TenantId == me.TenantId);
-            }
+                usersQ = usersQ.Where(x => x.TenantId == me!.TenantId);
 
-            var data = await q
+            // Primijeni filtere
+            if (!string.IsNullOrWhiteSpace(q))
+                usersQ = usersQ.Where(x =>
+                    (x.Email != null && x.Email.Contains(q)) ||
+                    (x.UserName != null && x.UserName.Contains(q)) ||
+                    (x.DisplayName != null && x.DisplayName.Contains(q)));
+
+            if (tenantId.HasValue)
+                usersQ = usersQ.Where(x => x.TenantId == tenantId.Value);
+
+            if (onlyLocked == true)
+                usersQ = usersQ.Where(x => x.LockoutEnd != null && x.LockoutEnd > DateTimeOffset.UtcNow);
+
+            // Left-join tenanata za prikaz naziva
+            var qJoined =
+                from u in usersQ
+                join t in _db.Tenants.AsNoTracking() on u.TenantId equals t.Id into gj
+                from tt in gj.DefaultIfEmpty()
+                select new { u, tt };
+
+            var data = await qJoined
                 .OrderBy(x => x.tt != null ? x.tt.Name : "(no tenant)")
                 .ThenBy(x => x.u.Email)
                 .Select(x => new TenantUserRow
@@ -58,11 +85,11 @@ namespace KarlixID.Web.Controllers
                 })
                 .ToListAsync();
 
-            // roles za svakog (odvojeno, store-agnostic)
+            // Dohvati role
             foreach (var row in data)
             {
                 var usr = await _um.FindByIdAsync(row.Id);
-                var roles = usr != null ? await _um.GetRolesAsync(usr) : Array.Empty<string>();
+                var roles = await _um.GetRolesAsync(usr!);
                 row.RolesCsv = string.Join(", ", roles);
             }
 
@@ -74,7 +101,7 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> Create()
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
+            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
 
             ViewBag.CanPickTenant = isGlobal;
             ViewBag.Tenants = await _db.Tenants
@@ -84,7 +111,6 @@ namespace KarlixID.Web.Controllers
 
             return View(new CreateTenantUserVM
             {
-                // Ako nije global, TenantId se ne bira — zaključan je na adminov tenant
                 TenantId = isGlobal ? null : me!.TenantId
             });
         }
@@ -95,35 +121,36 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> Create(CreateTenantUserVM model)
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
+            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
 
             if (!ModelState.IsValid)
             {
-                // ponovno napuni drop-down-e
                 ViewBag.CanPickTenant = isGlobal;
-                ViewBag.Tenants = await _db.Tenants
-                    .OrderBy(t => t.Name)
+                ViewBag.Tenants = await _db.Tenants.OrderBy(t => t.Name)
                     .Select(t => new { t.Id, t.Name })
                     .ToListAsync();
                 return View(model);
             }
 
-            // 🎯 Tenant asignacija:
-            // - GlobalAdmin može ručno birati tenant (ili ostaviti null → global user)
-            // - TenantAdmin uvijek kreira unutar svog tenanta
-            Guid? targetTenantId = isGlobal ? model.TenantId : me!.TenantId;
+            // Ako je GlobalAdmin → korisnik može biti bez tenanta (Guid.Empty).
+            // Inače tenant je od prijavljenog admina.
+            var targetTenantId = isGlobal ? Guid.Empty : (me!.TenantId ?? Guid.Empty);
 
-            // lozinka: koristi zadanu ili generiraj privremenu
-            var password = !string.IsNullOrWhiteSpace(model.TempPassword)
-                ? model.TempPassword!
-                : GenerateTempPassword();
+            // ako je Global i odabrao TenantId u formi, koristi to
+            if (isGlobal && model.TenantId.HasValue)
+                targetTenantId = model.TenantId.Value;
+
+            // lozinka
+            var password = string.IsNullOrWhiteSpace(model.TempPassword)
+                ? "Temp123!"
+                : model.TempPassword!;
 
             var user = new ApplicationUser
             {
                 Email = model.Email,
                 UserName = model.Email,
                 EmailConfirmed = true,
-                TenantId = targetTenantId // null za global usera
+                TenantId = targetTenantId
             };
 
             var result = await _um.CreateAsync(user, password);
@@ -133,14 +160,12 @@ namespace KarlixID.Web.Controllers
                     ModelState.AddModelError("", e.Description);
 
                 ViewBag.CanPickTenant = isGlobal;
-                ViewBag.Tenants = await _db.Tenants
-                    .OrderBy(t => t.Name)
+                ViewBag.Tenants = await _db.Tenants.OrderBy(t => t.Name)
                     .Select(t => new { t.Id, t.Name })
                     .ToListAsync();
                 return View(model);
             }
 
-            // Role
             if (isGlobal && model.MakeTenantAdmin)
             {
                 if (!await _rm.RoleExistsAsync(AppRoleInfo.TenantAdmin))
@@ -149,7 +174,90 @@ namespace KarlixID.Web.Controllers
                 await _um.AddToRoleAsync(user, AppRoleInfo.TenantAdmin);
             }
 
-            TempData["Info"] = $"Korisnik {model.Email} je kreiran. Privremena lozinka: {password}";
+            TempData["Ok"] = "Korisnik je kreiran.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // EDIT (GET)
+        [Authorize(Policy = "TenantAdminOrGlobal")]
+        public async Task<IActionResult> Edit(string id)
+        {
+            var me = await _um.GetUserAsync(User);
+            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+
+            var user = await _um.FindByIdAsync(id);
+            if (user == null) return NotFound();
+
+            // sigurnosna provjera
+            if (!isGlobal && me!.TenantId != user.TenantId)
+                return Forbid();
+
+            ViewBag.Tenants = await _db.Tenants
+                .OrderBy(t => t.Name)
+                .Select(t => new { t.Id, t.Name })
+                .ToListAsync();
+
+            var tenantName = await _db.Tenants
+                .Where(t => t.Id == user.TenantId)
+                .Select(t => t.Name)
+                .FirstOrDefaultAsync();
+
+            var vm = new TenantUserEditVM
+            {
+                UserId = user.Id,
+                Email = user.Email ?? user.UserName ?? "",
+                DisplayName = user.DisplayName,
+                TenantId = user.TenantId,
+                TenantName = tenantName,
+                CanPickTenant = isGlobal
+            };
+
+            return View(vm);
+        }
+
+        // EDIT (POST)
+        [HttpPost, ValidateAntiForgeryToken]
+        [Authorize(Policy = "TenantAdminOrGlobal")]
+        public async Task<IActionResult> Edit(TenantUserEditVM model)
+        {
+            var me = await _um.GetUserAsync(User);
+            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+
+            var user = await _um.FindByIdAsync(model.UserId);
+            if (user == null) return NotFound();
+
+            if (!isGlobal && me!.TenantId != user.TenantId)
+                return Forbid();
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Tenants = await _db.Tenants
+                    .OrderBy(t => t.Name)
+                    .Select(t => new { t.Id, t.Name })
+                    .ToListAsync();
+                return View(model);
+            }
+
+            user.DisplayName = model.DisplayName;
+
+            // Samo GlobalAdmin smije promijeniti tenant korisniku
+            if (isGlobal)
+                user.TenantId = model.TenantId ?? Guid.Empty;
+
+            var res = await _um.UpdateAsync(user);
+            if (!res.Succeeded)
+            {
+                foreach (var e in res.Errors)
+                    ModelState.AddModelError("", e.Description);
+
+                ViewBag.Tenants = await _db.Tenants
+                    .OrderBy(t => t.Name)
+                    .Select(t => new { t.Id, t.Name })
+                    .ToListAsync();
+                return View(model);
+            }
+
+            TempData["Ok"] = "Korisnik je ažuriran.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -158,12 +266,11 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> ResetPassword(string id)
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
+            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
 
             var user = await _um.FindByIdAsync(id);
             if (user == null) return NotFound();
 
-            // sigurnosna provjera tenant scope-a
             if (!isGlobal && me!.TenantId != user.TenantId)
                 return Forbid();
 
@@ -176,7 +283,7 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> ResetPassword(ResetPasswordVM model)
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
+            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
 
             var user = await _um.FindByIdAsync(model.UserId);
             if (user == null) return NotFound();
@@ -197,7 +304,7 @@ namespace KarlixID.Web.Controllers
                 return View(model);
             }
 
-            TempData["Info"] = "Lozinka je resetirana.";
+            TempData["Ok"] = "Lozinka je resetirana.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -206,7 +313,7 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> ToggleLock(string id)
         {
             var me = await _um.GetUserAsync(User);
-            var isGlobal = me != null && await _um.IsInRoleAsync(me, AppRoleInfo.GlobalAdmin);
+            var isGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
 
             var user = await _um.FindByIdAsync(id);
             if (user == null) return NotFound();
@@ -219,18 +326,8 @@ namespace KarlixID.Web.Controllers
 
             await _um.UpdateAsync(user);
 
+            TempData["Ok"] = locked ? "Korisnik je otključan." : "Korisnik je zaključan.";
             return RedirectToAction(nameof(Index));
-        }
-
-        // -------------------------
-        // Helpers
-        // -------------------------
-        private static string GenerateTempPassword()
-        {
-            // Identity opcije su kod tebe popuštene (nema obaveznih brojeva/velikih slova),
-            // no neka lozinka bude barem 10 znakova da prođe zadane/minimale politike.
-            // Ako želiš stroža pravila, dodaćemo.
-            return $"Tmp{Guid.NewGuid():N}".Substring(0, 10) + "!";
         }
     }
 }

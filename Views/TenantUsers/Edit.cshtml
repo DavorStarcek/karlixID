@@ -1,0 +1,50 @@
+﻿@model KarlixID.Web.Models.ViewModels.TenantUserEditVM
+@{
+    ViewData["Title"] = "Uredi korisnika";
+    var tenants = (IEnumerable<dynamic>)(ViewBag.Tenants ?? Array.Empty<object>());
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="Edit" method="post" class="mt-3">
+    <input type="hidden" asp-for="UserId" />
+
+    <div class="mb-3">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" readonly />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="DisplayName" class="form-label"></label>
+        <input asp-for="DisplayName" class="form-control" />
+        <span asp-validation-for="DisplayName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Tenant</label>
+        @if (Model.CanPickTenant)
+        {
+            <select asp-for="TenantId" class="form-select">
+                <option value="">(no tenant)</option>
+                @foreach (var t in tenants)
+                {
+                    <option value="@t.Id" selected="@(Model.TenantId.HasValue && Model.TenantId.Value.ToString().Equals(t.Id.ToString(), StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@t.Name</option>
+                }
+            </select>
+        }
+        else
+        {
+            <input class="form-control" value="@(Model.TenantName ?? "(no tenant)")" readonly />
+            <input type="hidden" asp-for="TenantId" />
+        }
+    </div>
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">Spremi</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Natrag</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
