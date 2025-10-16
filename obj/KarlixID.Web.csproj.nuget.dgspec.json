@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\dstarcek\\Desktop\\KarlixEU projekti\\KarlixID.Web.csproj": {}
+    "C:\\Users\\dstarcek\\Desktop\\KarlixEU projekti\\KarlixID\\KarlixID.Web.csproj": {}
   },
   "projects": {
-    "C:\\Users\\dstarcek\\Desktop\\KarlixEU projekti\\KarlixID.Web.csproj": {
+    "C:\\Users\\dstarcek\\Desktop\\KarlixEU projekti\\KarlixID\\KarlixID.Web.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\dstarcek\\Desktop\\KarlixEU projekti\\KarlixID.Web.csproj",
+        "projectUniqueName": "C:\\Users\\dstarcek\\Desktop\\KarlixEU projekti\\KarlixID\\KarlixID.Web.csproj",
         "projectName": "KarlixID.Web",
-        "projectPath": "C:\\Users\\dstarcek\\Desktop\\KarlixEU projekti\\KarlixID.Web.csproj",
+        "projectPath": "C:\\Users\\dstarcek\\Desktop\\KarlixEU projekti\\KarlixID\\KarlixID.Web.csproj",
         "packagesPath": "C:\\Users\\dstarcek\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\dstarcek\\Desktop\\KarlixEU projekti\\obj\\",
+        "outputPath": "C:\\Users\\dstarcek\\Desktop\\KarlixEU projekti\\KarlixID\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",

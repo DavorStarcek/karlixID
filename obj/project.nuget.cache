@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "d+LL64Ch/AA=",
+  "dgSpecHash": "FVJMA8Vz2hA=",
   "success": true,
-  "projectFilePath": "C:\\Users\\dstarcek\\Desktop\\KarlixEU projekti\\KarlixID.Web.csproj",
+  "projectFilePath": "C:\\Users\\dstarcek\\Desktop\\KarlixEU projekti\\KarlixID\\KarlixID.Web.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\dstarcek\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\dstarcek\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",

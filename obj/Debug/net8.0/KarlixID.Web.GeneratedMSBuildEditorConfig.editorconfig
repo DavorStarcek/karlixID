@@ -9,73 +9,73 @@ build_property.EnforceExtendedAnalyzerRules =
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = KarlixID.Web
 build_property.RootNamespace = KarlixID.Web
-build_property.ProjectDir = C:\Users\dstarcek\Desktop\KarlixEU projekti\
+build_property.ProjectDir = C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 8.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = C:\Users\dstarcek\Desktop\KarlixEU projekti
+build_property.MSBuildProjectDirectory = C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 8.0
 build_property.EnableCodeStyleSeverity = 
 
-[C:/Users/dstarcek/Desktop/KarlixEU projekti/Areas/Identity/Pages/_ViewStart.cshtml]
+[C:/Users/dstarcek/Desktop/KarlixEU projekti/KarlixID/Areas/Identity/Pages/_ViewStart.cshtml]
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcSWRlbnRpdHlcUGFnZXNcX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dstarcek/Desktop/KarlixEU projekti/Views/Admin/CreateTenant.cshtml]
+[C:/Users/dstarcek/Desktop/KarlixEU projekti/KarlixID/Views/Admin/CreateTenant.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQ3JlYXRlVGVuYW50LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dstarcek/Desktop/KarlixEU projekti/Views/Admin/Index.cshtml]
+[C:/Users/dstarcek/Desktop/KarlixEU projekti/KarlixID/Views/Admin/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dstarcek/Desktop/KarlixEU projekti/Views/Admin/Users.cshtml]
+[C:/Users/dstarcek/Desktop/KarlixEU projekti/KarlixID/Views/Admin/Users.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cVXNlcnMuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dstarcek/Desktop/KarlixEU projekti/Views/Home/Index.cshtml]
+[C:/Users/dstarcek/Desktop/KarlixEU projekti/KarlixID/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dstarcek/Desktop/KarlixEU projekti/Views/Home/Privacy.cshtml]
+[C:/Users/dstarcek/Desktop/KarlixEU projekti/KarlixID/Views/Home/Privacy.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dstarcek/Desktop/KarlixEU projekti/Views/Shared/Error.cshtml]
+[C:/Users/dstarcek/Desktop/KarlixEU projekti/KarlixID/Views/Shared/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dstarcek/Desktop/KarlixEU projekti/Views/Shared/_LoginPartial.cshtml]
+[C:/Users/dstarcek/Desktop/KarlixEU projekti/KarlixID/Views/Shared/_LoginPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9Mb2dpblBhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dstarcek/Desktop/KarlixEU projekti/Views/Shared/_ValidationScriptsPartial.cshtml]
+[C:/Users/dstarcek/Desktop/KarlixEU projekti/KarlixID/Views/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dstarcek/Desktop/KarlixEU projekti/Views/TenantUsers/Create.cshtml]
+[C:/Users/dstarcek/Desktop/KarlixEU projekti/KarlixID/Views/TenantUsers/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVGVuYW50VXNlcnNcQ3JlYXRlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dstarcek/Desktop/KarlixEU projekti/Views/TenantUsers/Index.cshtml]
+[C:/Users/dstarcek/Desktop/KarlixEU projekti/KarlixID/Views/TenantUsers/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVGVuYW50VXNlcnNcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dstarcek/Desktop/KarlixEU projekti/Views/TenantUsers/ResetPassword.cshtml]
+[C:/Users/dstarcek/Desktop/KarlixEU projekti/KarlixID/Views/TenantUsers/ResetPassword.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVGVuYW50VXNlcnNcUmVzZXRQYXNzd29yZC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dstarcek/Desktop/KarlixEU projekti/Views/_Layout.cshtml]
+[C:/Users/dstarcek/Desktop/KarlixEU projekti/KarlixID/Views/_Layout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX0xheW91dC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dstarcek/Desktop/KarlixEU projekti/Views/_ViewStart.cshtml]
+[C:/Users/dstarcek/Desktop/KarlixEU projekti/KarlixID/Views/_ViewStart.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dstarcek/Desktop/KarlixEU projekti/Views/Shared/_Layout.cshtml]
+[C:/Users/dstarcek/Desktop/KarlixEU projekti/KarlixID/Views/Shared/_Layout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = b-6suxudfa95
