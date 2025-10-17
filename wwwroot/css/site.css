@@ -1,22 +1,153 @@
-html {
-  font-size: 14px;
+﻿/* ===== KarlixID – global theme ===== */
+
+/* Brand paleta (lako promjenjiva) */
+:root {
+    --brand-primary: #2563eb; /* karlix plava */
+    --brand-primary-600: #1e40af;
+    --brand-accent: #22c55e; /* naglasak */
+    --brand-warning: #f59e0b;
+    --brand-danger: #ef4444;
+    --brand-dark: #0b1220;
+    --brand-muted: #6b7280;
+    --brand-bg: #f7f9fc;
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+/* Prepiši Bootstrap varijable (BS5 koristi CSS varijable) */
+:root {
+    --bs-primary: var(--brand-primary);
+    --bs-primary-rgb: 37,99,235;
+    --bs-success: var(--brand-accent);
+    --bs-warning: var(--brand-warning);
+    --bs-danger: var(--brand-danger);
+    --bs-body-bg: #ffffff;
+    --bs-body-color: #111827;
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+/* Tipografija i base */
+html, body {
+    height: 100%;
 }
 
-html {
-  position: relative;
-  min-height: 100%;
+    body.theme-karlix {
+        background: var(--brand-bg);
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+        color: var(--bs-body-color);
+    }
+
+/* NAVBAR */
+.navbar {
+    border-bottom: 1px solid rgba(0,0,0,.06);
 }
 
-body {
-  margin-bottom: 60px;
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: .2px;
+}
+
+.navbar .nav-link {
+    opacity: .9;
+}
+
+    .navbar .nav-link.active {
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 6px;
+    }
+
+/* CONTAINER */
+.container, .container-fluid, .container-lg, .container-xl {
+    /* širi središnji stup za admin sučelje */
+    max-width: 1200px;
+}
+
+/* KARTICE / SEKCIJE */
+.card {
+    border: 1px solid rgba(2,6,23,.06);
+    box-shadow: 0 1px 2px rgba(2,6,23,.05);
+}
+
+.card-title {
+    margin-bottom: .35rem;
+}
+
+/* GUMBI */
+.btn {
+    border-radius: .5rem;
+}
+
+.btn-primary {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+}
+
+    .btn-primary:hover {
+        background: var(--brand-primary-600);
+        border-color: var(--brand-primary-600);
+    }
+
+.btn-outline-primary {
+    color: var(--brand-primary);
+    border-color: rgba(37,99,235,.6);
+}
+
+    .btn-outline-primary:hover {
+        color: #fff;
+        background: var(--brand-primary);
+        border-color: var(--brand-primary);
+    }
+
+.btn-success {
+    background: var(--brand-accent);
+    border-color: var(--brand-accent);
+}
+
+/* FORME */
+.form-control, .form-select {
+    border-radius: .5rem;
+    border-color: rgba(2,6,23,.12);
+}
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--brand-primary);
+        box-shadow: 0 0 0 .2rem rgba(37,99,235,.15);
+    }
+
+/* TABLICE */
+.table {
+    background: #fff;
+    border-radius: .6rem;
+    overflow: hidden; /* za zaobljene rubove */
+}
+
+    .table thead th {
+        background: #f3f4f6;
+        border-bottom: 1px solid rgba(2,6,23,.06);
+    }
+
+    .table tbody tr:hover {
+        background: #f9fafb;
+    }
+
+/* BADGE – tenant */
+.badge-tenant {
+    background: #e0e7ff;
+    color: #1e3a8a;
+    border: 1px solid #c7d2fe;
+}
+
+/* ALERTS */
+.alert {
+    border-radius: .75rem;
+    border: 1px solid rgba(2,6,23,.08);
+}
+
+/* FOOTER */
+footer {
+    background: #fff;
+    border-top: 1px solid rgba(2,6,23,.06);
+}
+
+/* MALENE UTILITY DORADICE */
+.table .text-muted {
+    color: var(--brand-muted) !important;
 }
