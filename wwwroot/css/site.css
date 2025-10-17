@@ -1,153 +1,122 @@
-﻿/* ===== KarlixID – global theme ===== */
+﻿/* ========= KarlixID Tema ========= */
 
-/* Brand paleta (lako promjenjiva) */
+/* LIGHT (default) */
 :root {
-    --brand-primary: #2563eb; /* karlix plava */
-    --brand-primary-600: #1e40af;
-    --brand-accent: #22c55e; /* naglasak */
-    --brand-warning: #f59e0b;
-    --brand-danger: #ef4444;
-    --brand-dark: #0b1220;
-    --brand-muted: #6b7280;
-    --brand-bg: #f7f9fc;
+    --bg: #f8f9fb;
+    --card: #ffffff;
+    --text: #1f2a37;
+    --muted: #6b7280;
+    --brand: #0d6efd; /* bootstrap primary */
+    --brand-600: #0b5ed7;
+    --border: #e5e7eb;
+    --badge-bg: #eef2ff;
+    --badge-fg: #3730a3;
 }
 
-/* Prepiši Bootstrap varijable (BS5 koristi CSS varijable) */
-:root {
-    --bs-primary: var(--brand-primary);
-    --bs-primary-rgb: 37,99,235;
-    --bs-success: var(--brand-accent);
-    --bs-warning: var(--brand-warning);
-    --bs-danger: var(--brand-danger);
-    --bs-body-bg: #ffffff;
-    --bs-body-color: #111827;
+/* DARK */
+.theme-dark {
+    --bg: #0f172a;
+    --card: #111827;
+    --text: #e5e7eb;
+    --muted: #9ca3af;
+    --brand: #76a9fa;
+    --brand-600: #5b8def;
+    --border: #1f2937;
+    --badge-bg: #1e293b;
+    --badge-fg: #c7d2fe;
 }
 
-/* Tipografija i base */
-html, body {
-    height: 100%;
+/* Global */
+.theme-karlix {
+    background-color: var(--bg);
+    color: var(--text);
 }
 
-    body.theme-karlix {
-        background: var(--brand-bg);
-        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-        color: var(--bs-body-color);
-    }
-
-/* NAVBAR */
 .navbar {
-    border-bottom: 1px solid rgba(0,0,0,.06);
+    border-bottom: 1px solid var(--border);
 }
 
-.navbar-brand {
-    font-weight: 700;
-    letter-spacing: .2px;
-}
-
-.navbar .nav-link {
-    opacity: .9;
-}
-
-    .navbar .nav-link.active {
-        font-weight: 600;
-        text-decoration: underline;
-        text-underline-offset: 6px;
+    .navbar .navbar-brand,
+    .navbar .nav-link,
+    .navbar .navbar-text {
+        color: var(--text);
     }
 
-/* CONTAINER */
-.container, .container-fluid, .container-lg, .container-xl {
-    /* širi središnji stup za admin sučelje */
-    max-width: 1200px;
-}
+        .navbar .nav-link.active {
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+        }
 
-/* KARTICE / SEKCIJE */
+/* Cards / tables */
 .card {
-    border: 1px solid rgba(2,6,23,.06);
-    box-shadow: 0 1px 2px rgba(2,6,23,.05);
+    background-color: var(--card);
+    border-color: var(--border);
 }
 
-.card-title {
-    margin-bottom: .35rem;
-}
-
-/* GUMBI */
-.btn {
-    border-radius: .5rem;
-}
-
-.btn-primary {
-    background: var(--brand-primary);
-    border-color: var(--brand-primary);
-}
-
-    .btn-primary:hover {
-        background: var(--brand-primary-600);
-        border-color: var(--brand-primary-600);
-    }
-
-.btn-outline-primary {
-    color: var(--brand-primary);
-    border-color: rgba(37,99,235,.6);
-}
-
-    .btn-outline-primary:hover {
-        color: #fff;
-        background: var(--brand-primary);
-        border-color: var(--brand-primary);
-    }
-
-.btn-success {
-    background: var(--brand-accent);
-    border-color: var(--brand-accent);
-}
-
-/* FORME */
-.form-control, .form-select {
-    border-radius: .5rem;
-    border-color: rgba(2,6,23,.12);
-}
-
-    .form-control:focus, .form-select:focus {
-        border-color: var(--brand-primary);
-        box-shadow: 0 0 0 .2rem rgba(37,99,235,.15);
-    }
-
-/* TABLICE */
 .table {
-    background: #fff;
-    border-radius: .6rem;
-    overflow: hidden; /* za zaobljene rubove */
+    color: var(--text);
 }
 
     .table thead th {
-        background: #f3f4f6;
-        border-bottom: 1px solid rgba(2,6,23,.06);
+        border-bottom-color: var(--border);
     }
 
-    .table tbody tr:hover {
-        background: #f9fafb;
+    .table tbody td {
+        border-top-color: var(--border);
     }
 
-/* BADGE – tenant */
+/* Buttons */
+.btn-primary {
+    background-color: var(--brand);
+    border-color: var(--brand);
+}
+
+    .btn-primary:hover,
+    .btn-primary:focus {
+        background-color: var(--brand-600);
+        border-color: var(--brand-600);
+    }
+
+/* Tenant badge */
 .badge-tenant {
-    background: #e0e7ff;
-    color: #1e3a8a;
-    border: 1px solid #c7d2fe;
+    background: var(--badge-bg);
+    color: var(--badge-fg);
+    border: 1px solid var(--border);
+    padding: .4rem .6rem;
+    font-weight: 600;
 }
 
-/* ALERTS */
+/* Forms */
+.form-control, .form-select {
+    background-color: var(--card);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+    .form-control::placeholder {
+        color: var(--muted);
+    }
+
+/* Alerts */
 .alert {
-    border-radius: .75rem;
-    border: 1px solid rgba(2,6,23,.08);
+    border-color: var(--border);
 }
 
-/* FOOTER */
+/* Footer */
 footer {
-    background: #fff;
-    border-top: 1px solid rgba(2,6,23,.06);
+    background-color: transparent;
 }
 
-/* MALENE UTILITY DORADICE */
-.table .text-muted {
-    color: var(--brand-muted) !important;
+/* Dark mode icon swap (optional, JS postavlja klase) */
+#themeToggle .bi-sun {
+    display: none;
+}
+
+.theme-dark #themeToggle .bi-moon-stars {
+    display: none;
+}
+
+.theme-dark #themeToggle .bi-sun {
+    display: inline-block;
 }

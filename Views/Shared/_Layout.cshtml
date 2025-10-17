@@ -12,16 +12,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - KarlixID</title>
 
-    <!-- Bootstrap -->
+    <!-- Favicon / manifest (stavi /wwwroot/favicon.ico) -->
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="~/favicon-180.png" />
+
+    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
 
     <!-- Naša tema -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <!-- Preload teme iz localStorage (bez FOUC) -->
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('karlix-theme');
+                if (t === 'dark') document.documentElement.classList.add('theme-dark');
+            } catch { }
+        })();
+    </script>
 </head>
 <body class="theme-karlix d-flex flex-column min-vh-100">
     <nav class="navbar navbar-expand-sm navbar-light bg-white shadow-sm">
         <div class="container-fluid">
-            <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">KarlixID</a>
+            <a class="navbar-brand d-flex align-items-center gap-2" asp-area="" asp-controller="Home" asp-action="Index">
+                <img src="~/img/logo.svg" alt="KarlixID" width="24" height="24" />
+                <span>KarlixID</span>
+            </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav"
                     aria-controls="topNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,7 +63,6 @@
                         <a class="nav-link @Active("Home", "Index")" asp-controller="Home" asp-action="Index">Home</a>
                     </li>
 
-                    @* Link vidljiv adminima (GlobalAdmin ili TenantAdmin) *@
                     @if (User.IsInRole(AppRoleInfo.GlobalAdmin) || User.IsInRole(AppRoleInfo.TenantAdmin))
                     {
                         <li class="nav-item">
@@ -51,7 +70,6 @@
                         </li>
                     }
 
-                    @* Tenanti samo GlobalAdmin *@
                     @if (User.IsInRole(AppRoleInfo.GlobalAdmin))
                     {
                         <li class="nav-item">
@@ -60,8 +78,7 @@
                     }
                 </ul>
 
-                <ul class="navbar-nav">
-                    @* Tenant badge *@
+                <ul class="navbar-nav align-items-center">
                     @{
                         var tname = HttpCtx.HttpContext?.GetTenantName();
                     }
@@ -71,6 +88,13 @@
                             <span class="badge badge-tenant">🏷️ @tname</span>
                         </li>
                     }
+
+                    <!-- Dark mode toggle -->
+                    <li class="nav-item me-2">
+                        <button id="themeToggle" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Promijeni temu">
+                            <i class="bi bi-moon-stars" id="themeIcon"></i>
+                        </button>
+                    </li>
 
                     @if (SignInManager.IsSignedIn(User))
                     {
@@ -125,6 +149,7 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
     @RenderSection("Scripts", required: false)
 </body>
 </html>
