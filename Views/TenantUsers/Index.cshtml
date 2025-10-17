@@ -6,8 +6,8 @@
     Guid? tenantId = ViewBag.FilterTenantId as Guid?;
     bool onlyLocked = ViewBag.FilterOnlyLocked is bool b && b;
 }
+<h2 class="mb-3">@ViewData["Title"]</h2>
 
-<h2>@ViewData["Title"]</h2>
 
 @if (ViewBag.FilterTenantId != null)
 {
