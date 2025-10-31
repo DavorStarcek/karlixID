@@ -6,8 +6,17 @@
     Guid? tenantId = ViewBag.FilterTenantId as Guid?;
     bool onlyLocked = ViewBag.FilterOnlyLocked is bool b && b;
 }
-<h2 class="mb-3">@ViewData["Title"]</h2>
 
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Err"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
 
 @if (ViewBag.FilterTenantId != null)
 {
@@ -16,7 +25,6 @@
         <a class="btn btn-sm btn-outline-secondary ms-2" asp-action="Index">Makni filter</a>
     </div>
 }
-
 
 <form method="get" class="row g-2 mb-3">
     <div class="col-md-4">
@@ -41,8 +49,9 @@
     </div>
 </form>
 
-<p>
+<p class="d-flex gap-2 mb-3">
     <a class="btn btn-primary" asp-action="Create">+ Novi korisnik</a>
+    <a class="btn btn-success" asp-controller="Invite" asp-action="Create">+ Pozovi korisnika</a>
 </p>
 
 @if (!Model.Any())
@@ -75,7 +84,9 @@ else
                         <a class="btn btn-sm btn-outline-secondary" asp-action="Edit" asp-route-id="@u.Id">Uredi</a>
                         <a class="btn btn-sm btn-outline-primary" asp-action="EditRoles" asp-route-id="@u.Id">Uloge</a>
                         <a class="btn btn-sm btn-outline-secondary" asp-action="ResetPassword" asp-route-id="@u.Id">Lozinka</a>
-                        <a class="btn btn-sm btn-outline-warning" asp-action="ToggleLock" asp-route-id="@u.Id">@((u.LockedOut) ? "Otključaj" : "Zaključaj")</a>
+                        <a class="btn btn-sm btn-outline-warning" asp-action="ToggleLock" asp-route-id="@u.Id">
+                            @(u.LockedOut ? "Otključaj" : "Zaključaj")
+                        </a>
                     </td>
                 </tr>
             }

@@ -1,0 +1,37 @@
+﻿@model KarlixID.Web.Models.ViewModels.InviteAcceptVM
+@{
+    ViewData["Title"] = "Aktivacija računa";
+}
+
+<h2 class="mb-3">@ViewData["Title"]</h2>
+
+<div class="card p-3">
+    <div class="mb-2">
+        <label class="form-label">Email</label>
+        <input class="form-control" value="@Model.Email" disabled />
+    </div>
+
+    <form asp-action="Accept" method="post" novalidate>
+        <div asp-validation-summary="All" class="text-danger mb-2"></div>
+
+        <input type="hidden" asp-for="Token" />
+
+        <div class="mb-3">
+            <label asp-for="Password" class="form-label"></label>
+            <input asp-for="Password" class="form-control" />
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="ConfirmPassword" class="form-label"></label>
+            <input asp-for="ConfirmPassword" class="form-control" />
+            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Postavi lozinku</button>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

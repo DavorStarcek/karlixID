@@ -17,7 +17,6 @@ namespace KarlixID.Web.Controllers
         }
 
         // GET: /Tenants?q=&onlyActive=true
-        [Authorize(Policy = "GlobalAdminOnly")]
         public async Task<IActionResult> Index(string? q, bool? onlyActive)
         {
             ViewBag.FilterQ = q;
@@ -27,9 +26,10 @@ namespace KarlixID.Web.Controllers
 
             if (!string.IsNullOrWhiteSpace(q))
             {
+                var qq = q.Trim();
                 query = query.Where(t =>
-                    (t.Name != null && t.Name.Contains(q)) ||
-                    (t.Hostname != null && t.Hostname.Contains(q)));
+                    (t.Name != null && t.Name.Contains(qq)) ||
+                    (t.Hostname != null && t.Hostname.Contains(qq)));
             }
 
             if (onlyActive == true)
@@ -44,7 +44,6 @@ namespace KarlixID.Web.Controllers
             return View(data);
         }
 
-
         // GET: /Tenants/Create
         public IActionResult Create()
         {
@@ -57,16 +56,19 @@ namespace KarlixID.Web.Controllers
         public async Task<IActionResult> Create([Bind("Name,Hostname,IsActive")] Tenant model)
         {
             // osnovne validacije
-            if (string.IsNullOrWhiteSpace(model.Name))
+            var name = model.Name?.Trim();
+            var host = model.Hostname?.Trim();
+
+            if (string.IsNullOrWhiteSpace(name))
                 ModelState.AddModelError(nameof(Tenant.Name), "Naziv je obavezan.");
 
-            if (string.IsNullOrWhiteSpace(model.Hostname))
+            if (string.IsNullOrWhiteSpace(host))
                 ModelState.AddModelError(nameof(Tenant.Hostname), "Hostname je obavezan.");
 
-            if (!string.IsNullOrWhiteSpace(model.Hostname))
+            if (!string.IsNullOrWhiteSpace(host))
             {
                 var exists = await _db.Tenants
-                    .AnyAsync(t => t.Hostname.ToLower() == model.Hostname.Trim().ToLower());
+                    .AnyAsync(t => t.Hostname.ToLower() == host.ToLower());
                 if (exists)
                     ModelState.AddModelError(nameof(Tenant.Hostname), "Hostname već postoji.");
             }
@@ -77,15 +79,16 @@ namespace KarlixID.Web.Controllers
             var entity = new Tenant
             {
                 Id = Guid.NewGuid(),
-                Name = model.Name.Trim(),
-                Hostname = model.Hostname.Trim(),
+                Name = name!,
+                Hostname = host!,
                 IsActive = model.IsActive
             };
 
             _db.Tenants.Add(entity);
             await _db.SaveChangesAsync();
 
-                        return RedirectToAction(nameof(Index));
+            TempData["Ok"] = "Tenant je dodan.";
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: /Tenants/Edit/{id}
@@ -106,16 +109,22 @@ namespace KarlixID.Web.Controllers
         {
             if (id != model.Id) return NotFound();
 
-            if (string.IsNullOrWhiteSpace(model.Name))
+            var name = model.Name?.Trim();
+            var host = model.Hostname?.Trim();
+
+            if (string.IsNullOrWhiteSpace(name))
                 ModelState.AddModelError(nameof(Tenant.Name), "Naziv je obavezan.");
 
-            if (string.IsNullOrWhiteSpace(model.Hostname))
+            if (string.IsNullOrWhiteSpace(host))
                 ModelState.AddModelError(nameof(Tenant.Hostname), "Hostname je obavezan.");
 
-            var exists = await _db.Tenants
-                .AnyAsync(t => t.Id != model.Id && t.Hostname.ToLower() == model.Hostname.Trim().ToLower());
-            if (exists)
-                ModelState.AddModelError(nameof(Tenant.Hostname), "Hostname već postoji.");
+            if (!string.IsNullOrWhiteSpace(host))
+            {
+                var exists = await _db.Tenants
+                    .AnyAsync(t => t.Id != model.Id && t.Hostname.ToLower() == host.ToLower());
+                if (exists)
+                    ModelState.AddModelError(nameof(Tenant.Hostname), "Hostname već postoji.");
+            }
 
             if (!ModelState.IsValid)
                 return View(model);
@@ -123,12 +132,13 @@ namespace KarlixID.Web.Controllers
             var dbTenant = await _db.Tenants.FirstOrDefaultAsync(t => t.Id == model.Id);
             if (dbTenant == null) return NotFound();
 
-            dbTenant.Name = model.Name.Trim();
-            dbTenant.Hostname = model.Hostname.Trim();
+            dbTenant.Name = name!;
+            dbTenant.Hostname = host!;
             dbTenant.IsActive = model.IsActive;
 
             await _db.SaveChangesAsync();
-            
+
+            TempData["Ok"] = "Tenant je ažuriran.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -140,13 +150,14 @@ namespace KarlixID.Web.Controllers
             var tenant = await _db.Tenants.FirstOrDefaultAsync(t => t.Id == id);
             if (tenant == null) return NotFound();
 
-            // (opcionalno) provjeri ima li korisnika vezanih na ovaj tenant i spriječi brisanje
+            // (opcionalno) blokiraj brisanje ako ima korisnika:
             // var hasUsers = await _db.AspNetUsers.AnyAsync(u => u.TenantId == id);
             // if (hasUsers) { TempData["Err"] = "Tenant ima korisnike. Najprije ih prebacite/obrišite."; return RedirectToAction(nameof(Index)); }
 
             _db.Tenants.Remove(tenant);
             await _db.SaveChangesAsync();
 
+            TempData["Ok"] = "Tenant je obrisan.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -161,6 +172,7 @@ namespace KarlixID.Web.Controllers
             tenant.IsActive = !tenant.IsActive;
             await _db.SaveChangesAsync();
 
+            TempData["Ok"] = tenant.IsActive ? "Tenant je aktiviran." : "Tenant je deaktiviran.";
             return RedirectToAction(nameof(Index));
         }
     }

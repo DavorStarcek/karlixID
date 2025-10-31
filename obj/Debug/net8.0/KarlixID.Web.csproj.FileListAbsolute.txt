@@ -677,10 +677,10 @@ C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID\obj\Debug\net8.0\staticweba
 C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID\obj\Debug\net8.0\staticwebassets.build.json.cache
 C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID\obj\Debug\net8.0\staticwebassets.development.json
 C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID\obj\Debug\net8.0\staticwebassets.build.endpoints.json
-C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID\obj\Debug\net8.0\KarlixID.EBC99245.Up2Date
 C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID\obj\Debug\net8.0\KarlixID.Web.dll
 C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID\obj\Debug\net8.0\refint\KarlixID.Web.dll
 C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID\obj\Debug\net8.0\KarlixID.Web.pdb
 C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID\obj\Debug\net8.0\KarlixID.Web.genruntimeconfig.cache
 C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID\obj\Debug\net8.0\ref\KarlixID.Web.dll
+C:\Users\dstarcek\Desktop\KarlixEU projekti\KarlixID\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt

@@ -3,3 +3,18 @@ dotnet ef dbcontext scaffold "Server=185.203.18.50;Database=KarlixID;User Id=sa;
 
 SA VPS-A
 dotnet ef dbcontext scaffold "Server=localhost;Database=KarlixID;User Id=sa;Password=PikVrbovec123!;TrustServerCertificate=True;" Microsoft.EntityFrameworkCore.SqlServer --context-dir Data --output-dir Models --context ApplicationDbContext --force
+
+SCAFFOLD BEZ ASPNET TABLICA - SA VANJSKE MREŽE
+Scaffold-DbContext "Server=185.203.18.50;Database=KarlixID;User Id=sa;Password=PikVrbovec123!;TrustServerCertificate=True;" `
+  Microsoft.EntityFrameworkCore.SqlServer `
+  -Context ScaffoldTempContext `
+  -ContextDir "Data\ScaffoldCtx" `
+  -OutputDir "Models\Scaffold" `
+  -NoOnConfiguring `
+  -UseDatabaseNames `
+  -Force `
+  -ExcludeTables AspNetUsers,AspNetRoles,AspNetUserClaims,AspNetRoleClaims,AspNetUserLogins,AspNetUserTokens,AspNetUserRoles
+
+Nakon toga jednostavno prebaciš promjene (ako ih imaš) u svoje modele,
+i obrišeš Data\ScaffoldCtx ako ti više ne treba.
+ApplicationDbContext ostaje netaknut i Identity ostaje ispravan.

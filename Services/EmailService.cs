@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System;
 using System.Net;
 using System.Net.Mail;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
 namespace KarlixID.Web.Services
 {
@@ -13,27 +15,56 @@ namespace KarlixID.Web.Services
             _config = config;
         }
 
-        public async Task SendEmailAsync(string to, string subject, string body, List<(string filename, byte[] content)> attachments = null)
+        /// <summary>
+        /// Jednostavan async mail sender (SMTP).
+        /// </summary>
+        public async Task SendAsync(string to, string subject, string htmlBody)
         {
-            var smtp = new SmtpClient(_config["Smtp:Host"], int.Parse(_config["Smtp:Port"]))
-            {
-                EnableSsl = true,
-                Credentials = new NetworkCredential(_config["Smtp:User"], _config["Smtp:Pass"])
-            };
+            // SMTP postavke
+            var smtpHost = _config["Smtp:Host"];
+            var smtpPort = int.TryParse(_config["Smtp:Port"], out var port) ? port : 587;
+            var smtpUser = _config["Smtp:User"];
+            var smtpPass = _config["Smtp:Pass"];
+            var smtpFrom = _config["Smtp:From"] ?? smtpUser;
+            var smtpFromName = _config["Smtp:FromName"] ?? "KarlixID";
 
-            var mail = new MailMessage(_config["Smtp:From"], to, subject, body);
-            mail.IsBodyHtml = true;
+            if (string.IsNullOrWhiteSpace(smtpUser) || string.IsNullOrWhiteSpace(smtpPass))
+                throw new InvalidOperationException("SMTP postavke nisu ispravno definirane u konfiguraciji.");
 
-            if (attachments != null)
+            try
             {
-                foreach (var (filename, content) in attachments)
+                var fromAddress = new MailAddress(smtpFrom, smtpFromName);
+                var toAddress = new MailAddress(to);
+
+                using var client = new SmtpClient(smtpHost, smtpPort)
                 {
-                    var stream = new MemoryStream(content);
-                    mail.Attachments.Add(new Attachment(stream, filename));
-                }
-            }
+                    Credentials = new NetworkCredential(smtpUser, smtpPass),
+                    EnableSsl = true,
+                    DeliveryMethod = SmtpDeliveryMethod.Network,
+                    Timeout = 10000 // 10 sekundi
+                };
 
-            await smtp.SendMailAsync(mail);
+                using var msg = new MailMessage(fromAddress, toAddress)
+                {
+                    Subject = subject,
+                    Body = htmlBody,
+                    IsBodyHtml = true
+                };
+
+                await client.SendMailAsync(msg);
+            }
+            catch (FormatException)
+            {
+                throw new FormatException($"E-mail adresa '{to}' nije u ispravnom formatu.");
+            }
+            catch (SmtpException ex)
+            {
+                throw new InvalidOperationException($"Slanje e-maila nije uspjelo: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Neočekivana greška pri slanju e-maila: {ex.Message}", ex);
+            }
         }
     }
 }
