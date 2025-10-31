@@ -3,6 +3,7 @@ using KarlixID.Web.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using OpenIddict; // ⬅️ zbog modelBuilder.UseOpenIddict()
 
 namespace KarlixID.Web.Data
 {
@@ -22,6 +23,9 @@ namespace KarlixID.Web.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            // ➜ Uključi OpenIddict EF model (OpenIddict* tablice)
+            builder.UseOpenIddict();
 
             // === Identity: mapiranje na postojeće tablice/indekse/duljine ===
             builder.Entity<ApplicationUser>(b =>
@@ -92,7 +96,7 @@ namespace KarlixID.Web.Data
             builder.Entity<IdentityUserRole<string>>(b =>
             {
                 b.ToTable("AspNetUserRoles");
-                // primarni ključ i indexe EF će sam složiti; ne name-amo PK da ne “smeta”
+                // primarni ključ i indexe EF će sam složiti
             });
 
             // === Tenants ===
@@ -120,7 +124,7 @@ namespace KarlixID.Web.Data
                 entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
                 entity.Property(e => e.Email).HasMaxLength(256);
                 entity.Property(e => e.RoleName).HasMaxLength(100);
-                entity.Property(e => e.Token).HasMaxLength(64);
+                entity.Property(e => e.Token).HasMaxLength(64); // 64-znakovni hex token
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
                 entity.Property(e => e.CreatedBy).HasMaxLength(450);
 
