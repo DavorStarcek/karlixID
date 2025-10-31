@@ -84,7 +84,7 @@ namespace KarlixID.Web.Controllers
             return SignOut(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 
-        // GET /connect/userinfo (informativno)
+        // GET /connect/userinfo (informativno) //dd
         [HttpGet("~/connect/userinfo")]
         [Authorize]
         public IActionResult Userinfo()
