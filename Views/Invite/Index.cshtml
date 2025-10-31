@@ -1,0 +1,121 @@
+﻿@{
+    ViewData["Title"] = "Pozivnice";
+    var tenants = (IEnumerable<dynamic>)(ViewBag.Tenants ?? Array.Empty<object>());
+    string? q = ViewBag.FilterQ as string;
+    Guid? tenantId = ViewBag.FilterTenantId as Guid?;
+    string status = (ViewBag.FilterStatus as string) ?? "active";
+}
+
+<h2 class="mb-3">@ViewData["Title"]</h2>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Err"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<form method="get" asp-action="Index" class="row g-2 mb-3">
+    <div class="col-md-4">
+        <input name="q" value="@q" class="form-control" placeholder="Traži po emailu..." />
+    </div>
+
+    <div class="col-md-3">
+        <select name="tenantId" class="form-select">
+            <option value="">-- Svi tenanti --</option>
+            @foreach (var t in tenants)
+            {
+                var selected = tenantId.HasValue && tenantId.Value.ToString().Equals(t.Id.ToString(), StringComparison.OrdinalIgnoreCase);
+                <option value="@t.Id" selected="@(selected ? "selected" : null)">@t.Name</option>
+            }
+        </select>
+    </div>
+
+    <div class="col-md-3">
+        <select name="status" class="form-select">
+            <option value="active" selected="@(status == "active" ? "selected" : null)">Aktivne</option>
+            <option value="expired" selected="@(status == "expired" ? "selected" : null)">Istekle</option>
+            <option value="accepted" selected="@(status == "accepted" ? "selected" : null)">Prihvaćene</option>
+            <option value="all" selected="@(status == "all" ? "selected" : null)">Sve</option>
+        </select>
+    </div>
+
+    <div class="col-md-2 d-grid">
+        <button class="btn btn-outline-primary" type="submit">Filtriraj</button>
+    </div>
+</form>
+
+<p class="mb-3">
+    <a class="btn btn-success" asp-action="Create">+ Nova pozivnica</a>
+</p>
+
+@{
+    var model = (IEnumerable<dynamic>)Model!;
+}
+
+@if (model == null || !model.Any())
+{
+    <div class="alert alert-info">Nema pozivnica za prikaz.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Tenant</th>
+                    <th>Uloga</th>
+                    <th>Istječe</th>
+                    <th>Prihvaćena</th>
+                    <th>Status</th>
+                    <th style="width:260px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var i in model)
+                {
+                    var isAccepted = i.AcceptedAt != null;
+                    var isExpired = !isAccepted && (i.ExpiresAt <= DateTimeOffset.UtcNow);
+                    <tr class="@(isAccepted ? "table-success" : (isExpired ? "table-warning" : ""))">
+                        <td>@i.Email</td>
+                        <td>@i.TenantName</td>
+                        <td>@(string.IsNullOrWhiteSpace((string?)i.RoleName) ? "-" : i.RoleName)</td>
+                        <td>@(((DateTimeOffset)i.ExpiresAt).ToLocalTime().ToString("yyyy-MM-dd HH:mm"))</td>
+                        <td>@(i.AcceptedAt == null ? "-" : ((DateTimeOffset)i.AcceptedAt).ToLocalTime().ToString("yyyy-MM-dd HH:mm"))</td>
+                        <td>
+                            @if (isAccepted)
+                            {
+                                <span class="badge text-bg-success">Prihvaćena</span>
+                            }
+                            else if (isExpired)
+                            {
+
+                                <span class="badge text-bg-warning">Istekla</span>
+                            }
+                            else
+                            {
+
+                                <span class="badge text-bg-secondary">Aktivna</span>
+                            }
+                        </td>
+                        <td class="text-nowrap">
+                            @if (!isAccepted)
+                            {
+                                <form asp-action="Resend" asp-route-id="@i.Id" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary me-1">Ponovno pošalji</button>
+                                </form>
+                            }
+                            <form asp-action="Delete" asp-route-id="@i.Id" method="post" class="d-inline"
+                                  onsubmit="return confirm('Obrisati pozivnicu za @i.Email?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Obriši</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

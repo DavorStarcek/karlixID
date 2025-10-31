@@ -9,7 +9,6 @@
 
     @if (!isAuth)
     {
-        <!-- Nije prijavljen: prikaži poziv na prijavu -->
         <div class="mt-4">
             <p class="mb-3">Molimo prijavite se za nastavak.</p>
             <a class="btn btn-primary btn-lg"
@@ -19,23 +18,26 @@
     }
     else
     {
-        <!-- Prijavljen: smislen “landing” s brzim linkovima -->
         <div class="alert alert-success mt-4 mb-4">
             Uspješno ste prijavljeni kao <strong>@User?.Identity?.Name</strong>.
         </div>
 
         <div class="row g-3">
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Korisnici</h5>
-                        <p class="card-text">Upravljanje korisnicima unutar tenanta.</p>
-                        <a class="btn btn-outline-primary" asp-controller="TenantUsers" asp-action="Index">Otvori</a>
+            @* Korisnici — dostupno GlobalAdmin i TenantAdmin *@
+            @if (User.IsInRole(KarlixID.Web.Models.AppRoleInfo.GlobalAdmin) || User.IsInRole(KarlixID.Web.Models.AppRoleInfo.TenantAdmin))
+            {
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Korisnici</h5>
+                            <p class="card-text">Upravljanje korisnicima unutar tenanta.</p>
+                            <a class="btn btn-outline-primary" asp-controller="TenantUsers" asp-action="Index">Otvori</a>
+                        </div>
                     </div>
                 </div>
-            </div>
+            }
 
-            @* Tenanti – prikazuj samo GlobalAdmin *@
+            @* Tenanti — samo GlobalAdmin *@
             @if (User.IsInRole(KarlixID.Web.Models.AppRoleInfo.GlobalAdmin))
             {
                 <div class="col-md-4">
@@ -44,6 +46,20 @@
                             <h5 class="card-title">Tenanti</h5>
                             <p class="card-text">Pregled i administracija tenantima.</p>
                             <a class="btn btn-outline-primary" asp-controller="Tenants" asp-action="Index">Otvori</a>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @* NOVO: Pozivnice — GlobalAdmin i TenantAdmin *@
+            @if (User.IsInRole(KarlixID.Web.Models.AppRoleInfo.GlobalAdmin) || User.IsInRole(KarlixID.Web.Models.AppRoleInfo.TenantAdmin))
+            {
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Pozivnice</h5>
+                            <p class="card-text">Slanje, pregled i upravljanje pozivnicama.</p>
+                            <a class="btn btn-outline-primary" asp-controller="Invite" asp-action="Index">Otvori</a>
                         </div>
                     </div>
                 </div>

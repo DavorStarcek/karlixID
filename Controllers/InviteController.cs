@@ -30,7 +30,76 @@ namespace KarlixID.Web.Controllers
             _email = email;
         }
 
-        // GET: /Invite/Create
+        // =========================
+        // LISTA POZIVNICA (Index)
+        // =========================
+        [Authorize(Policy = "TenantAdminOrGlobal")]
+        public async Task<IActionResult> Index(string? q, Guid? tenantId, string? status)
+        {
+            var me = await _um.GetUserAsync(User);
+            var editorIsGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+
+            ViewBag.Tenants = await _db.Tenants
+                .OrderBy(t => t.Name)
+                .Select(t => new { t.Id, t.Name })
+                .ToListAsync();
+
+            ViewBag.FilterQ = q;
+            ViewBag.FilterTenantId = tenantId;
+            ViewBag.FilterStatus = status ?? "active";
+
+            var invQ = _db.Invites.AsNoTracking();
+
+            if (!editorIsGlobal && me?.TenantId != null)
+                invQ = invQ.Where(i => i.TenantId == me!.TenantId);
+
+            if (!string.IsNullOrWhiteSpace(q))
+                invQ = invQ.Where(i => i.Email.Contains(q));
+
+            if (tenantId.HasValue)
+                invQ = invQ.Where(i => i.TenantId == tenantId.Value);
+
+            var now = DateTimeOffset.UtcNow;
+            switch ((status ?? "active").ToLowerInvariant())
+            {
+                case "accepted":
+                    invQ = invQ.Where(i => i.AcceptedAt != null);
+                    break;
+                case "expired":
+                    invQ = invQ.Where(i => i.AcceptedAt == null && i.ExpiresAt <= now);
+                    break;
+                case "all":
+                    break;
+                default:
+                    invQ = invQ.Where(i => i.AcceptedAt == null && i.ExpiresAt > now);
+                    break;
+            }
+
+            var data = await (
+                from i in invQ
+                join t in _db.Tenants.AsNoTracking() on i.TenantId equals t.Id into gj
+                from tt in gj.DefaultIfEmpty()
+                orderby i.AcceptedAt != null, i.ExpiresAt descending
+                select new
+                {
+                    i.Id,
+                    i.Email,
+                    TenantName = tt != null ? tt.Name : "(bez tenanta)",
+                    i.RoleName,
+                    i.Token,
+                    i.ExpiresAt,
+                    i.AcceptedAt,
+                    i.CreatedBy,
+                    i.CreatedAt
+                }
+            ).ToListAsync();
+
+            return View(data);
+        }
+
+        // =========================
+        // CREATE (GET)
+        // =========================
         [Authorize(Policy = "TenantAdminOrGlobal")]
         public async Task<IActionResult> Create()
         {
@@ -47,7 +116,9 @@ namespace KarlixID.Web.Controllers
             return View(new InviteCreateVM());
         }
 
-        // POST: /Invite/Create
+        // =========================
+        // CREATE (POST)
+        // =========================
         [HttpPost, ValidateAntiForgeryToken]
         [Authorize(Policy = "TenantAdminOrGlobal")]
         public async Task<IActionResult> Create(InviteCreateVM model)
@@ -65,7 +136,7 @@ namespace KarlixID.Web.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // 64-znakovni token (hex) – stane u NVARCHAR(128)
+            // Token
             var tokenBytes = Guid.NewGuid().ToByteArray().Concat(Guid.NewGuid().ToByteArray()).ToArray();
             var token = BitConverter.ToString(tokenBytes).Replace("-", "").ToLowerInvariant();
 
@@ -86,48 +157,159 @@ namespace KarlixID.Web.Controllers
             _db.Invites.Add(invite);
             await _db.SaveChangesAsync();
 
+            // Accept link
             var acceptUrl = Url.Action(
                 "Accept", "Invite",
                 new { token },
-                protocol: Request.Scheme,
-                host: Request.Host.ToString()
-            );
+                protocol: Request.Scheme)!;
 
-            // Uređen HTML mail
+            var expiresUtcText = invite.ExpiresAt.ToUniversalTime().ToString("yyyy-MM-dd HH:mm");
+
+            // HTML mail
             var html = $@"
-<div style='font-family:Segoe UI,Arial,sans-serif; background:#f6f8fb; padding:30px'>
-  <div style='max-width:600px;margin:auto;background:#fff;border-radius:8px;padding:30px;box-shadow:0 2px 8px rgba(0,0,0,.08)'>
-    <h2 style='color:#1f2937;text-align:center;margin:0 0 16px'>Pozivnica za KarlixID</h2>
-    <p style='color:#374151;font-size:15px'>
-      Pozvani ste u sustav <strong>KarlixID</strong>. Kliknite na gumb za aktivaciju računa i postavljanje lozinke.
-    </p>
-    <p style='text-align:center;margin:28px 0'>
-      <a href='{acceptUrl}' style='background:#2563eb;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;display:inline-block'>
-        Aktiviraj račun
-      </a>
-    </p>
-    <p style='color:#6b7280;font-size:14px'>
-      Ako gumb ne radi, otvorite ovaj link u pregledniku:<br/>
-      <a href='{acceptUrl}' style='color:#2563eb'>{acceptUrl}</a>
-    </p>
-    <hr style='border:none;border-top:1px solid #e5e7eb;margin:22px 0'/>
-    <p style='color:#9ca3af;font-size:13px;margin:0'>
-      Link vrijedi do <strong>{invite.ExpiresAt:yyyy-MM-dd HH:mm} UTC</strong>.<br/>
-      Pošiljatelj: <strong>{(me?.Email ?? "KarlixID")}</strong>
-    </p>
-  </div>
-  <p style='text-align:center;color:#9ca3af;font-size:12px;margin-top:10px'>
-    © {DateTime.UtcNow.Year} KarlixID
-  </p>
-</div>";
+            <table width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background:#f6f8fb;padding:24px;font-family:Segoe UI,Roboto,Arial,sans-serif"">
+              <tr>
+                <td align=""center"">
+                  <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background:#ffffff;border-radius:12px;overflow:hidden"">
+                    <tr>
+                      <td style=""background:#0d6efd;color:#fff;padding:16px 24px;font-size:18px;font-weight:600"">
+                        KarlixID • Pozivnica za pristup
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style=""padding:24px;color:#333"">
+                        <p style=""margin:0 0 12px"">Bok,</p>
+                        <p style=""margin:0 0 16px"">
+                          Pozvani ste da se pridružite sustavu <strong>KarlixID</strong>.
+                          Kliknite gumb za aktivaciju računa i postavljanje lozinke.
+                        </p>
+                        <p style=""margin:0 0 4px""><strong>Email:</strong> {invite.Email}</p>
+                        <p style=""margin:0 0 16px""><strong>Vrijedi do:</strong> {expiresUtcText} UTC</p>
+                        <p style=""margin:0 0 16px;text-align:center"">
+                          <a href=""{acceptUrl}"" style=""display:inline-block;background:#0d6efd;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600"">
+                            Aktiviraj račun
+                          </a>
+                        </p>
+                        <p style=""margin:0 0 8px;font-size:12px;color:#666"">
+                          Ako gumb ne radi, otvorite ovu poveznicu:
+                        </p>
+                        <p style=""word-break:break-all;font-size:12px;color:#666"">{acceptUrl}</p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style=""background:#f1f3f9;color:#6b7280;padding:12px 24px;font-size:12px"">
+                        Ovu poruku je generirao KarlixID sustav.
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>";
 
             await _email.SendAsync(invite.Email, "Pozivnica za KarlixID", html);
 
-            TempData["Ok"] = $"Pozivnica za {invite.Email} je poslana.";
-            return RedirectToAction("Index", "TenantUsers");
+            TempData["Ok"] = "Pozivnica je poslana na email.";
+            return RedirectToAction(nameof(Index));
         }
 
-        // GET: /Invite/Accept?token=...
+        // =========================
+        // RESEND
+        // =========================
+        [HttpPost, ValidateAntiForgeryToken]
+        [Authorize(Policy = "TenantAdminOrGlobal")]
+        public async Task<IActionResult> Resend(Guid id)
+        {
+            var me = await _um.GetUserAsync(User);
+            var editorIsGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+
+            var inv = await _db.Invites.FirstOrDefaultAsync(i => i.Id == id);
+            if (inv == null) return NotFound();
+
+            if (!editorIsGlobal && me?.TenantId != inv.TenantId)
+                return Forbid();
+
+            if (inv.AcceptedAt != null)
+            {
+                TempData["Err"] = "Pozivnica je već prihvaćena.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var acceptUrl = Url.Action("Accept", "Invite", new { token = inv.Token }, protocol: Request.Scheme)!;
+            var expiresUtcText = inv.ExpiresAt.ToUniversalTime().ToString("yyyy-MM-dd HH:mm");
+
+            // identičan HTML kao kod Create
+            var html = $@"
+            <table width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background:#f6f8fb;padding:24px;font-family:Segoe UI,Roboto,Arial,sans-serif"">
+              <tr>
+                <td align=""center"">
+                  <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background:#ffffff;border-radius:12px;overflow:hidden"">
+                    <tr>
+                      <td style=""background:#0d6efd;color:#fff;padding:16px 24px;font-size:18px;font-weight:600"">
+                        KarlixID • Ponovno slanje pozivnice
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style=""padding:24px;color:#333"">
+                        <p style=""margin:0 0 12px"">Bok,</p>
+                        <p style=""margin:0 0 16px"">
+                          Podsjećamo vas da ste pozvani u sustav <strong>KarlixID</strong>.
+                          Kliknite gumb ispod kako biste aktivirali svoj račun i postavili lozinku.
+                        </p>
+                        <p style=""margin:0 0 4px""><strong>Email:</strong> {inv.Email}</p>
+                        <p style=""margin:0 0 16px""><strong>Vrijedi do:</strong> {expiresUtcText} UTC</p>
+                        <p style=""margin:0 0 16px;text-align:center"">
+                          <a href=""{acceptUrl}"" style=""display:inline-block;background:#0d6efd;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600"">
+                            Aktiviraj račun
+                          </a>
+                        </p>
+                        <p style=""margin:0 0 8px;font-size:12px;color:#666"">
+                          Ako gumb ne radi, otvorite ovu poveznicu:
+                        </p>
+                        <p style=""word-break:break-all;font-size:12px;color:#666"">{acceptUrl}</p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style=""background:#f1f3f9;color:#6b7280;padding:12px 24px;font-size:12px"">
+                        Ovu poruku je generirao KarlixID sustav.
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>";
+
+            await _email.SendAsync(inv.Email, "Ponovno: pozivnica za KarlixID", html);
+
+            TempData["Ok"] = "Pozivnica je ponovno poslana na email.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // =========================
+        // DELETE
+        // =========================
+        [HttpPost, ValidateAntiForgeryToken]
+        [Authorize(Policy = "TenantAdminOrGlobal")]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            var me = await _um.GetUserAsync(User);
+            var editorIsGlobal = await _um.IsInRoleAsync(me!, AppRoleInfo.GlobalAdmin);
+
+            var inv = await _db.Invites.FirstOrDefaultAsync(i => i.Id == id);
+            if (inv == null) return NotFound();
+
+            if (!editorIsGlobal && me?.TenantId != inv.TenantId)
+                return Forbid();
+
+            _db.Invites.Remove(inv);
+            await _db.SaveChangesAsync();
+
+            TempData["Ok"] = "Pozivnica je obrisana.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // =========================
+        // ACCEPT (GET)
+        // =========================
         [AllowAnonymous]
         public async Task<IActionResult> Accept(string token)
         {
@@ -137,47 +319,41 @@ namespace KarlixID.Web.Controllers
             var inv = await _db.Invites.AsNoTracking()
                 .FirstOrDefaultAsync(i => i.Token == token);
 
-            if (inv == null)
+            if (inv == null || inv.ExpiresAt <= DateTimeOffset.UtcNow || inv.AcceptedAt != null)
                 return View("Invalid");
 
-            if (inv.AcceptedAt != null)
-                return View("Invalid");
-
-            if (inv.ExpiresAt <= DateTime.UtcNow)
-                return View("Expired");
-
-            return View(new InviteAcceptVM
+            var vm = new InviteAcceptVM
             {
                 Token = token,
                 Email = inv.Email
-            });
+            };
+            return View(vm);
         }
 
-        // POST: /Invite/Accept
-        // POST: /Invite/Accept
+        // =========================
+        // ACCEPT (POST)
+        // =========================
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Accept(InviteAcceptVM model)
         {
-            // Uvijek učitaj pozivnicu da bi popunio model.Email kod grešaka
             var inv = await _db.Invites.FirstOrDefaultAsync(i => i.Token == model.Token);
             if (inv == null)
                 return View("Invalid");
 
-            // vrati email u model (jer input za email je disabled i ne šalje se iz forme)
             model.Email = inv.Email;
 
             if (inv.AcceptedAt != null)
                 return View("Invalid");
 
-            if (inv.ExpiresAt <= DateTime.UtcNow)
+            if (inv.ExpiresAt <= DateTimeOffset.UtcNow)
                 return View("Expired");
 
             if (!ModelState.IsValid)
-                return View(model); // sada prikazuje email i greške
+                return View(model);
 
-            // Ako korisnik već postoji
+            // Ako korisnik već postoji -> reset lozinke
             var existingUser = await _um.FindByEmailAsync(inv.Email);
             if (existingUser != null)
             {
@@ -185,9 +361,8 @@ namespace KarlixID.Web.Controllers
                 var resetRes = await _um.ResetPasswordAsync(existingUser, resetToken, model.Password);
                 if (!resetRes.Succeeded)
                 {
-                    foreach (var e in resetRes.Errors)
-                        ModelState.AddModelError("", e.Description);
-                    return View(model); // email ostaje prikazan
+                    foreach (var e in resetRes.Errors) ModelState.AddModelError("", e.Description);
+                    return View(model);
                 }
 
                 existingUser.EmailConfirmed = true;
@@ -212,15 +387,15 @@ namespace KarlixID.Web.Controllers
             var createRes = await _um.CreateAsync(user, model.Password);
             if (!createRes.Succeeded)
             {
-                foreach (var e in createRes.Errors)
-                    ModelState.AddModelError("", e.Description);
-                return View(model); // email ostaje prikazan
+                foreach (var e in createRes.Errors) ModelState.AddModelError("", e.Description);
+                return View(model);
             }
 
             if (!string.IsNullOrWhiteSpace(inv.RoleName))
             {
                 if (!await _rm.RoleExistsAsync(inv.RoleName))
                     await _rm.CreateAsync(new IdentityRole(inv.RoleName));
+
                 await _um.AddToRoleAsync(user, inv.RoleName);
             }
 
@@ -232,6 +407,5 @@ namespace KarlixID.Web.Controllers
             TempData["Ok"] = "Račun je uspješno aktiviran. Možete se prijaviti.";
             return RedirectToPage("/Account/Login", new { area = "Identity" });
         }
-
     }
 }

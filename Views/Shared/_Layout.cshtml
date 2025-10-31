@@ -6,22 +6,15 @@
 @inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpCtx
 
 @functions {
-    // Privremeni provider branda po tenant-u (po imenu); lako kasnije prebacimo u DB.
     (string Brand, string Brand600) GetBrandForTenant(string? tenantName)
     {
         if (string.IsNullOrWhiteSpace(tenantName))
-            return ("#0d6efd", "#0b5ed7"); // default Bootstrap plava
-
-        // Primjeri — promijeni po želji:
-        // "Tenant Local" -> zelena; "PIK Vrbovec plus d.o.o." -> crvena
+            return ("#0d6efd", "#0b5ed7");
         switch (tenantName.Trim().ToLowerInvariant())
         {
-            case "tenant local":
-                return ("#10b981", "#059669"); // emerald 500 / 600
-            case "pik vrbovec plus d.o.o.":
-                return ("#ef4444", "#dc2626"); // red 500 / 600
-            default:
-                return ("#0d6efd", "#0b5ed7"); // fallback
+            case "tenant local": return ("#10b981", "#059669");
+            case "pik vrbovec plus d.o.o.": return ("#ef4444", "#dc2626");
+            default: return ("#0d6efd", "#0b5ed7");
         }
     }
 }
@@ -40,7 +33,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
-    <!-- Preload teme iz localStorage (bez treptanja) -->
     <script>
         (function () {
             try {
@@ -52,12 +44,18 @@
 </head>
 @{
         var tname = HttpCtx.HttpContext?.GetTenantName();
-        // fallback i iz claim-ova ako imaš custom claim "tenant_name"
         tname = string.IsNullOrWhiteSpace(tname)
                 ? (User?.Claims?.FirstOrDefault(c => c.Type == "tenant_name")?.Value)
                 : tname;
 
         var (brand, brand600) = GetBrandForTenant(tname);
+
+        var currentController = (ViewContext.RouteData.Values["controller"] as string) ?? "";
+        var currentAction = (ViewContext.RouteData.Values["action"] as string) ?? "";
+        string Active(string ctrl, string? act = null) =>
+                (string.Equals(currentController, ctrl, StringComparison.OrdinalIgnoreCase) &&
+                  (act == null || string.Equals(currentAction, act, StringComparison.OrdinalIgnoreCase)))
+                ? "active" : "";
 }
 <body class="theme-karlix d-flex flex-column min-vh-100"
       style="--brand:@brand; --brand-600:@brand600;">
@@ -72,15 +70,6 @@
                     aria-controls="topNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-
-            @{
-                var currentController = (ViewContext.RouteData.Values["controller"] as string) ?? "";
-                var currentAction = (ViewContext.RouteData.Values["action"] as string) ?? "";
-                string Active(string ctrl, string? act = null) =>
-                (string.Equals(currentController, ctrl, StringComparison.OrdinalIgnoreCase) &&
-                (act == null || string.Equals(currentAction, act, StringComparison.OrdinalIgnoreCase)))
-                ? "active" : "";
-            }
 
             <div class="collapse navbar-collapse" id="topNav">
                 <ul class="navbar-nav me-auto">
@@ -99,6 +88,14 @@
                     {
                         <li class="nav-item">
                             <a class="nav-link @Active("Tenants", "Index")" asp-controller="Tenants" asp-action="Index">Tenanti</a>
+                        </li>
+                    }
+
+                    @* NOVO: Pozivnice — dostupno GlobalAdmin i TenantAdmin; pozicionirano odmah nakon Tenanti *@
+                    @if (User.IsInRole(AppRoleInfo.GlobalAdmin) || User.IsInRole(AppRoleInfo.TenantAdmin))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link @Active("Invite", "Index")" asp-controller="Invite" asp-action="Index">Pozivnice</a>
                         </li>
                     }
                 </ul>
