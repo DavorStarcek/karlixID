@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36310.24 d17.14
+VisualStudioVersion = 17.14.36310.24
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KarlixID.Web", "KarlixID.Web.csproj", "{A96DA07E-F9D7-4315-9446-A0408591D390}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KarlixPortal.Web", "..\KarlixPortal.Web\KarlixPortal.Web.csproj", "{016B962F-ACAE-4FD7-AD6E-C7AAFD28FEE1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{A96DA07E-F9D7-4315-9446-A0408591D390}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A96DA07E-F9D7-4315-9446-A0408591D390}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A96DA07E-F9D7-4315-9446-A0408591D390}.Release|Any CPU.Build.0 = Release|Any CPU
+		{016B962F-ACAE-4FD7-AD6E-C7AAFD28FEE1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{016B962F-ACAE-4FD7-AD6E-C7AAFD28FEE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{016B962F-ACAE-4FD7-AD6E-C7AAFD28FEE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{016B962F-ACAE-4FD7-AD6E-C7AAFD28FEE1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

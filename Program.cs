@@ -57,14 +57,12 @@ builder.Services.ConfigureApplicationCookie(opts =>
 // 📌 Claims factory (tenant_id / tenant_name, itd.)
 builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, AppUserClaimsPrincipalFactory>();
 
-// 📌 Authorization politike
 // 📌 Authorization politike (novi API u .NET 8+)
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("GlobalAdminOnly", policy =>
         policy.RequireRole(AppRoleInfo.GlobalAdmin))
     .AddPolicy("TenantAdminOrGlobal", policy =>
         policy.RequireRole(AppRoleInfo.GlobalAdmin, AppRoleInfo.TenantAdmin));
-
 
 // 📌 Middleware & Services
 builder.Services.AddHttpContextAccessor();
@@ -115,7 +113,7 @@ builder.Services.AddOpenIddict()
             .AllowAuthorizationCodeFlow()
             .AllowRefreshTokenFlow();
 
-        // Scope-ovi — "offline_access" ide preko OpenIddictConstants.Scopes.*
+        // Scope-ovi — uključuju i offline_access
         options.RegisterScopes(Scopes.OpenId, Scopes.Profile, Scopes.Email, Scopes.Roles, Scopes.OfflineAccess);
 
         // Dev certifikati
@@ -274,7 +272,6 @@ using (var scope = app.Services.CreateScope())
                 Scopes.Email,
                 Scopes.Roles,
                 Scopes.OfflineAccess
-
             },
             Requirements =
             {
@@ -283,7 +280,7 @@ using (var scope = app.Services.CreateScope())
         });
     }
 
-    // MVC/confidential
+    // MVC/confidential (dev primjer)
     if (await appManager.FindByClientIdAsync("karlix_mvc") is null)
     {
         await appManager.CreateAsync(new OpenIddictApplicationDescriptor
@@ -307,6 +304,49 @@ using (var scope = app.Services.CreateScope())
                 Permissions.Endpoints.Authorization,
                 Permissions.Endpoints.Token,
                 Permissions.Endpoints.Introspection,
+
+                Permissions.GrantTypes.AuthorizationCode,
+                Permissions.GrantTypes.RefreshToken,
+
+                Permissions.ResponseTypes.Code,
+
+                Scopes.OpenId,
+                Scopes.Profile,
+                Scopes.Email,
+                Scopes.Roles,
+                Scopes.OfflineAccess
+            }
+        });
+    }
+
+    // ✅ Karlix Portal (MVC u produkciji na karlix.eu)
+    if (await appManager.FindByClientIdAsync("karlix_portal") is null)
+    {
+        await appManager.CreateAsync(new OpenIddictApplicationDescriptor
+        {
+            ClientId = "karlix_portal",
+            ClientSecret = "super-tajna-rijec-za-dev",
+            DisplayName = "Karlix Portal (MVC)",
+            ClientType = ClientTypes.Confidential,
+            ConsentType = ConsentTypes.Implicit,
+
+            // Production URL-ovi:
+            //RedirectUris =
+            //{
+            //    new Uri("https://karlix.eu/signin-oidc")
+            //},
+            //PostLogoutRedirectUris =
+            //{
+            //    new Uri("https://karlix.eu/")
+            //},
+            // Ako želiš testirati lokalno, možeš dodati i ovo:
+            RedirectUris = { new Uri("https://localhost:5003/signin-oidc"), new Uri("https://karlix.eu/signin-oidc") },
+            PostLogoutRedirectUris = { new Uri("https://localhost:5003/"), new Uri("https://karlix.eu/") },
+
+            Permissions =
+            {
+                Permissions.Endpoints.Authorization,
+                Permissions.Endpoints.Token,
 
                 Permissions.GrantTypes.AuthorizationCode,
                 Permissions.GrantTypes.RefreshToken,
