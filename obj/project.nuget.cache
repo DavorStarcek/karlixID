@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "g6oTfzm5nzg=",
+  "dgSpecHash": "nKmqXhvP7GE=",
   "success": true,
   "projectFilePath": "C:\\Users\\dstarcek\\Desktop\\KarlixEU projekti\\KarlixID\\KarlixID.Web.csproj",
   "expectedPackageFiles": [
@@ -71,7 +71,7 @@
     "C:\\Users\\dstarcek\\.nuget\\packages\\microsoft.identitymodel.jsonwebtokens\\8.14.0\\microsoft.identitymodel.jsonwebtokens.8.14.0.nupkg.sha512",
     "C:\\Users\\dstarcek\\.nuget\\packages\\microsoft.identitymodel.logging\\8.14.0\\microsoft.identitymodel.logging.8.14.0.nupkg.sha512",
     "C:\\Users\\dstarcek\\.nuget\\packages\\microsoft.identitymodel.protocols\\8.14.0\\microsoft.identitymodel.protocols.8.14.0.nupkg.sha512",
-    "C:\\Users\\dstarcek\\.nuget\\packages\\microsoft.identitymodel.protocols.openidconnect\\6.35.0\\microsoft.identitymodel.protocols.openidconnect.6.35.0.nupkg.sha512",
+    "C:\\Users\\dstarcek\\.nuget\\packages\\microsoft.identitymodel.protocols.openidconnect\\8.14.0\\microsoft.identitymodel.protocols.openidconnect.8.14.0.nupkg.sha512",
     "C:\\Users\\dstarcek\\.nuget\\packages\\microsoft.identitymodel.tokens\\8.14.0\\microsoft.identitymodel.tokens.8.14.0.nupkg.sha512",
     "C:\\Users\\dstarcek\\.nuget\\packages\\microsoft.io.recyclablememorystream\\3.0.0\\microsoft.io.recyclablememorystream.3.0.0.nupkg.sha512",
     "C:\\Users\\dstarcek\\.nuget\\packages\\microsoft.net.http.headers\\8.0.20\\microsoft.net.http.headers.8.0.20.nupkg.sha512",
@@ -118,7 +118,7 @@
     "C:\\Users\\dstarcek\\.nuget\\packages\\system.diagnostics.diagnosticsource\\6.0.1\\system.diagnostics.diagnosticsource.6.0.1.nupkg.sha512",
     "C:\\Users\\dstarcek\\.nuget\\packages\\system.drawing.common\\6.0.0\\system.drawing.common.6.0.0.nupkg.sha512",
     "C:\\Users\\dstarcek\\.nuget\\packages\\system.formats.asn1\\8.0.2\\system.formats.asn1.8.0.2.nupkg.sha512",
-    "C:\\Users\\dstarcek\\.nuget\\packages\\system.identitymodel.tokens.jwt\\6.35.0\\system.identitymodel.tokens.jwt.6.35.0.nupkg.sha512",
+    "C:\\Users\\dstarcek\\.nuget\\packages\\system.identitymodel.tokens.jwt\\8.14.0\\system.identitymodel.tokens.jwt.8.14.0.nupkg.sha512",
     "C:\\Users\\dstarcek\\.nuget\\packages\\system.io.packaging\\8.0.1\\system.io.packaging.8.0.1.nupkg.sha512",
     "C:\\Users\\dstarcek\\.nuget\\packages\\system.io.pipelines\\6.0.3\\system.io.pipelines.6.0.3.nupkg.sha512",
     "C:\\Users\\dstarcek\\.nuget\\packages\\system.memory\\4.5.4\\system.memory.4.5.4.nupkg.sha512",
