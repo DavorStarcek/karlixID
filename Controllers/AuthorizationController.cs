@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using System.Security.Claims;
+using System.Linq;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace KarlixID.Web.Controllers
@@ -57,9 +58,23 @@ namespace KarlixID.Web.Controllers
                     .SetDestinations(Destinations.AccessToken, Destinations.IdentityToken));
             }
 
+            // Role iz postojećeg korisničkog principal-a
             foreach (var role in User.Claims.Where(c => c.Type == ClaimTypes.Role))
             {
                 identity.AddClaim(new Claim(Claims.Role, role.Value)
+                    .SetDestinations(Destinations.AccessToken, Destinations.IdentityToken));
+            }
+
+            // 🔹 TENANT CLAIM – NOVO
+            var tenantClaim =
+                User.Claims.FirstOrDefault(c => c.Type == "tenant")
+                ?? User.Claims.FirstOrDefault(c => c.Type == "tenant_id")
+                ?? User.Claims.FirstOrDefault(c => c.Type == "tenant:name");
+
+            if (tenantClaim is not null && !string.IsNullOrWhiteSpace(tenantClaim.Value))
+            {
+                // U OpenIddict tokene ga zovemo "tenant"
+                identity.AddClaim(new Claim("tenant", tenantClaim.Value)
                     .SetDestinations(Destinations.AccessToken, Destinations.IdentityToken));
             }
 
@@ -84,7 +99,7 @@ namespace KarlixID.Web.Controllers
             return SignOut(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 
-        // GET /connect/userinfo (informativno) //dd
+        // GET /connect/userinfo (informativno)
         [HttpGet("~/connect/userinfo")]
         [Authorize]
         public IActionResult Userinfo()
